@@ -1,0 +1,50 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.dylib
+*.so
+*.exe
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+._*
+
+# Logs
+*.log
+logs/
+
+# Test data (generated)
+tests/testdata/*.xlsx
+templates/*.xlsx
+
+# ERiC SDK (proprietary - not included in repo)
+external/eric-sdk/lib/
+external/eric-sdk/include/
+external/eric-sdk/examples/
+
+# Certificates (sensitive)
+*.pfx
+*.p12
+
+# Generated XBRL files
+*.xbrl
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+
+# Compiled binaries
+ebilanz-submit
+ebilanz_tests
+create_test_data

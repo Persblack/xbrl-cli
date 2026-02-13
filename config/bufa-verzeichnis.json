@@ -1,0 +1,118 @@
+{
+  "_comment": "BuFa-Verzeichnis: Mapping von 4-stelliger BuFa-Nr auf Bundesland und Konvertierungsregeln für die 13-stellige bundeseinheitliche Steuernummer. Quelle: ELSTER-Entwickler-Dokumentation.",
+
+  "bundeslaender": {
+    "baden_wuerttemberg": {
+      "bufaPrefix": ["28"],
+      "format": "28FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "bayern": {
+      "bufaPrefix": ["91", "92"],
+      "format": "9FFF0BBBUUUUUP",
+      "description": "FFF=BuFa(1-3), BBB=Bezirk(4-6), UUUUU=Unternr(7-11), P=Prüf(12)"
+    },
+    "berlin": {
+      "bufaPrefix": ["11"],
+      "format": "11FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "brandenburg": {
+      "bufaPrefix": ["30"],
+      "format": "30FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "bremen": {
+      "bufaPrefix": ["24"],
+      "format": "24FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "hamburg": {
+      "bufaPrefix": ["22"],
+      "format": "22FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "hessen": {
+      "bufaPrefix": ["26"],
+      "format": "26FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "mecklenburg_vorpommern": {
+      "bufaPrefix": ["40"],
+      "format": "40FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "niedersachsen": {
+      "bufaPrefix": ["23"],
+      "format": "23FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "nordrhein_westfalen": {
+      "bufaPrefix": ["51", "52", "53"],
+      "format": "5FFF0BBBBUUUUP",
+      "description": "FFF=BuFa(1-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "rheinland_pfalz": {
+      "bufaPrefix": ["27"],
+      "format": "27FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "saarland": {
+      "bufaPrefix": ["10"],
+      "format": "10FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "sachsen": {
+      "bufaPrefix": ["32"],
+      "format": "32FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "sachsen_anhalt": {
+      "bufaPrefix": ["31"],
+      "format": "31FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "schleswig_holstein": {
+      "bufaPrefix": ["21"],
+      "format": "21FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    },
+    "thueringen": {
+      "bufaPrefix": ["41"],
+      "format": "41FF0BBBBUUUUP",
+      "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
+    }
+  },
+
+  "conversionRules": {
+    "_comment": "Vereinfachtes Format: FF/BBB/UUUUP -> Bundeseinheitlich 13-stellig. Format: LLFF0BBBUUUUP wobei LL=Bundesland-Prefix, FF=BuFa-Suffix, BBB(B)=Bezirksnr, UUUU(P)=Unternr+Prüfziffer. Die 0 ist eine fixe Null als Trenner.",
+
+    "standard": {
+      "_comment": "Gilt für die meisten Bundesländer (nicht Bayern und NRW)",
+      "steps": [
+        "Take BuFa 4 digits as LLFF",
+        "Take Steuernummer FF/BBB/UUUUP",
+        "Ignore the FF from Steuernummer (redundant with BuFa)",
+        "Result: LLFF0BBBUUUUP (13 digits)"
+      ]
+    },
+
+    "nrw": {
+      "_comment": "NRW: BuFa 5XXX, Steuernummer XXX/XXXX/XXXP",
+      "steps": [
+        "Take BuFa 4 digits (5FFF)",
+        "Take Steuernummer FFF/BBBB/UUUP",
+        "Result: 5FFF0BBBBUUUP (13 digits)"
+      ]
+    },
+
+    "bayern": {
+      "_comment": "Bayern: BuFa 9XXX, Steuernummer XXX/XXX/XXXXXP (3/3/5 format)",
+      "steps": [
+        "Take BuFa 4 digits (9FFF)",
+        "Take Steuernummer FFF/BBB/UUUUUP",
+        "Result: 9FFF0BBBUUUUUP (13 digits)"
+      ]
+    }
+  }
+}

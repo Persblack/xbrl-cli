@@ -1,0 +1,236 @@
+{
+  "version": "6.8",
+  "namespace": "http://www.xbrl.de/taxonomies/de-gaap-ci-2024-04-01",
+  "schemaRef": "http://www.xbrl.de/taxonomies/de-gaap-ci-2024-04-01/de-gaap-ci-2024-04-01-shell-fiscal.xsd",
+  "linkNamespace": "http://www.xbrl.org/2003/linkbase",
+  "xlinkNamespace": "http://www.w3.org/1999/xlink",
+
+  "mapping": {
+    "_comment": "Bilanz Aktiva — Anlagevermögen — I. Immaterielle VG",
+    "immaterielleVG_schutzrechte": "de-gaap-ci:bs.ass.fixAss.intangAss.selfCreatedIR",
+    "immaterielleVG_konzessionen": "de-gaap-ci:bs.ass.fixAss.intangAss.concessionsPIR",
+    "immaterielleVG_firmenwert": "de-gaap-ci:bs.ass.fixAss.intangAss.goodwill",
+    "immaterielleVG_anzahlungen": "de-gaap-ci:bs.ass.fixAss.intangAss.advPayIntangAss",
+    "immaterielleVG_andere": "de-gaap-ci:bs.ass.fixAss.intangAss.other",
+    "immaterielleVG_summe": "de-gaap-ci:bs.ass.fixAss.intangAss",
+
+    "_comment2": "Bilanz Aktiva — Anlagevermögen — II. Sachanlagen",
+    "sachanlagen_grundstuecke": "de-gaap-ci:bs.ass.fixAss.tan.worksLandAndBuildings",
+    "sachanlagen_maschinen": "de-gaap-ci:bs.ass.fixAss.tan.worksPlant",
+    "sachanlagen_bga": "de-gaap-ci:bs.ass.fixAss.tan.otherEq",
+    "sachanlagen_anzahlungen": "de-gaap-ci:bs.ass.fixAss.tan.advPayConstructInProgress",
+    "sachanlagen_andere": "de-gaap-ci:bs.ass.fixAss.tan.other",
+    "sachanlagen_summe": "de-gaap-ci:bs.ass.fixAss.tan",
+
+    "_comment3": "Bilanz Aktiva — Anlagevermögen — III. Finanzanlagen",
+    "finanzanlagen_verbundenU": "de-gaap-ci:bs.ass.fixAss.fin.worksSharesAffiliated",
+    "finanzanlagen_ausleihungenVerbundenU": "de-gaap-ci:bs.ass.fixAss.fin.worksLoansAffiliated",
+    "finanzanlagen_beteiligungen": "de-gaap-ci:bs.ass.fixAss.fin.worksSharesParticipation",
+    "finanzanlagen_ausleihungenBeteiligungen": "de-gaap-ci:bs.ass.fixAss.fin.worksLoansParticipation",
+    "finanzanlagen_wertpapiere": "de-gaap-ci:bs.ass.fixAss.fin.worksSecurities",
+    "finanzanlagen_sonstigeAusleihungen": "de-gaap-ci:bs.ass.fixAss.fin.worksOtherLoans",
+    "finanzanlagen_andere": "de-gaap-ci:bs.ass.fixAss.fin.other",
+    "finanzanlagen_summe": "de-gaap-ci:bs.ass.fixAss.fin",
+
+    "anlagevermoegen_summe": "de-gaap-ci:bs.ass.fixAss",
+
+    "_comment4": "Bilanz Aktiva — Umlaufvermögen — I. Vorräte",
+    "vorraete_roh": "de-gaap-ci:bs.ass.currAss.worksInvent.worksRawMat",
+    "vorraete_unfertig": "de-gaap-ci:bs.ass.currAss.worksInvent.worksWIP",
+    "vorraete_fertig": "de-gaap-ci:bs.ass.currAss.worksInvent.worksFinishedGoodsAndGoods",
+    "vorraete_anzahlungen": "de-gaap-ci:bs.ass.currAss.worksInvent.worksAdvPayInvent",
+    "vorraete_summe": "de-gaap-ci:bs.ass.currAss.worksInvent",
+
+    "_comment5": "Bilanz Aktiva — Umlaufvermögen — II. Forderungen",
+    "_comment_forderung_einlagen": "Forderungen — Eingeforderte noch ausstehende Einlagen",
+    "forderungen_eingeforderte_einlagen": "de-gaap-ci:bs.ass.currAss.receiv.other.unpaidCapital",
+    "forderungen_lul": "de-gaap-ci:bs.ass.currAss.worksDebtorsTA",
+    "forderungen_verbundenU": "de-gaap-ci:bs.ass.currAss.worksDebtorsAffiliated",
+    "forderungen_beteiligungen": "de-gaap-ci:bs.ass.currAss.worksDebtorsParticipation",
+    "forderungen_sonstige": "de-gaap-ci:bs.ass.currAss.worksOtherAss",
+    "forderungen_summe": "de-gaap-ci:bs.ass.currAss.worksDebtors",
+
+    "_comment6": "Bilanz Aktiva — Umlaufvermögen — III. Wertpapiere",
+    "wertpapiere_uv_verbundenU": "de-gaap-ci:bs.ass.currAss.worksSecuritiesAffiliated",
+    "wertpapiere_uv_sonstige": "de-gaap-ci:bs.ass.currAss.worksOtherSecurities",
+    "wertpapiere_uv_summe": "de-gaap-ci:bs.ass.currAss.worksSecurities",
+
+    "_comment7": "Bilanz Aktiva — Umlaufvermögen — IV. Kasse/Bank",
+    "kassenbestand": "de-gaap-ci:bs.ass.currAss.worksChequeCash",
+
+    "umlaufvermoegen_summe": "de-gaap-ci:bs.ass.currAss",
+
+    "_comment8": "Bilanz Aktiva — Sonstiges",
+    "rechnungsabgrenzung_aktiv": "de-gaap-ci:bs.ass.worksDefChargesAndPPA",
+    "latente_steuern_aktiv": "de-gaap-ci:bs.ass.worksDeferredTaxAss",
+    "unterschiedsbetrag_aktiv": "de-gaap-ci:bs.ass.worksExcessActCovPlanAss",
+
+    "summe_aktiva": "de-gaap-ci:bs.ass",
+
+    "_comment9": "Bilanz Passiva — A. Eigenkapital",
+    "gezeichnetes_kapital": "de-gaap-ci:bs.eqLiab.equity.subsc",
+    "_comment_ausstehend": "Eigenkapital — Nicht eingeforderte Einlagen (passivisch abgesetzt)",
+    "ausstehende_einlagen_nicht_eingefordert": "de-gaap-ci:bs.eqLiab.equity.subscribed.unpaidCap",
+    "kapitalruecklage": "de-gaap-ci:bs.eqLiab.equity.worksCapitalRes",
+    "gewinnruecklage_gesetzlich": "de-gaap-ci:bs.eqLiab.equity.worksRevRes.workslegalRes",
+    "gewinnruecklage_herrschend": "de-gaap-ci:bs.eqLiab.equity.worksRevRes.worksResSharesParentComp",
+    "gewinnruecklage_satzungsmaessig": "de-gaap-ci:bs.eqLiab.equity.worksRevRes.worksStatutoryRes",
+    "gewinnruecklage_andere": "de-gaap-ci:bs.eqLiab.equity.worksRevRes.worksOtherRevRes",
+    "gewinnruecklage_summe": "de-gaap-ci:bs.eqLiab.equity.worksRevRes",
+    "gewinnvortrag": "de-gaap-ci:bs.eqLiab.equity.worksProfitCarriedForward",
+    "jahresueberschuss": "de-gaap-ci:bs.eqLiab.equity.worksNetIncome",
+    "eigenkapital_summe": "de-gaap-ci:bs.eqLiab.equity",
+
+    "_comment10": "Bilanz Passiva — B. Rückstellungen",
+    "rueckstellungen_pensionen": "de-gaap-ci:bs.eqLiab.worksProvisions.worksPensionProv",
+    "rueckstellungen_steuern": "de-gaap-ci:bs.eqLiab.worksProvisions.worksTaxProv",
+    "rueckstellungen_sonstige": "de-gaap-ci:bs.eqLiab.worksProvisions.worksOtherProv",
+    "rueckstellungen_summe": "de-gaap-ci:bs.eqLiab.worksProvisions",
+
+    "_comment11": "Bilanz Passiva — C. Verbindlichkeiten",
+    "verbindlichkeiten_anleihen": "de-gaap-ci:bs.eqLiab.worksLiab.worksBonds",
+    "verbindlichkeiten_banken": "de-gaap-ci:bs.eqLiab.worksLiab.worksBankLoans",
+    "verbindlichkeiten_anzahlungen": "de-gaap-ci:bs.eqLiab.worksLiab.worksAdvPayReceived",
+    "verbindlichkeiten_lul": "de-gaap-ci:bs.eqLiab.worksLiab.worksTradePayables",
+    "verbindlichkeiten_wechsel": "de-gaap-ci:bs.eqLiab.worksLiab.worksBillsOfExchange",
+    "verbindlichkeiten_verbundenU": "de-gaap-ci:bs.eqLiab.worksLiab.worksLiabAffiliated",
+    "verbindlichkeiten_beteiligungen": "de-gaap-ci:bs.eqLiab.worksLiab.worksLiabParticipation",
+    "verbindlichkeiten_sonstige": "de-gaap-ci:bs.eqLiab.worksLiab.worksOtherLiab",
+    "verbindlichkeiten_summe": "de-gaap-ci:bs.eqLiab.worksLiab",
+
+    "_comment12": "Bilanz Passiva — Sonstiges",
+    "rechnungsabgrenzung_passiv": "de-gaap-ci:bs.eqLiab.worksDefIncome",
+    "latente_steuern_passiv": "de-gaap-ci:bs.eqLiab.worksDeferredTaxLiab",
+
+    "summe_passiva": "de-gaap-ci:bs.eqLiab",
+
+    "_comment13": "GuV — Gesamtkostenverfahren",
+    "guv_umsatzerloese": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksRevenue",
+    "guv_bestandsveraenderungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksChangesInventories",
+    "guv_eigenleistungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksOwnWork",
+    "guv_sonstige_ertraege": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksOtherOpIncome",
+
+    "guv_material_roh": "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp.worksRawMat",
+    "guv_material_leistungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp.worksPurchServices",
+    "guv_material_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp",
+
+    "guv_personal_loehne": "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp.worksWages",
+    "guv_personal_sozial": "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp.worksSocialSec",
+    "guv_personal_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp",
+
+    "guv_abschreibungen_immateriell_sach": "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr.worksDeprIntangFixAss",
+    "guv_abschreibungen_umlauf": "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr.worksDeprCurrAss",
+    "guv_abschreibungen_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr",
+
+    "guv_sonstige_aufwendungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksOtherOpExp",
+
+    "guv_ertraege_beteiligungen": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksIncomeFromParticipation",
+    "guv_ertraege_wertpapiere": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksIncomeFromOtherSecurities",
+    "guv_zins_ertraege": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksOtherInterestAndIncome",
+    "guv_abschreibungen_finanz": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksDeprFinAss",
+    "guv_zins_aufwendungen": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksInterestAndExp",
+
+    "guv_ergebnis_gewoehnlich": "de-gaap-ci:is.netIncome.regular",
+
+    "guv_ao_ertraege": "de-gaap-ci:is.netIncome.worksExtraordinaryResult.worksExtraordinaryIncome",
+    "guv_ao_aufwendungen": "de-gaap-ci:is.netIncome.worksExtraordinaryResult.worksExtraordinaryExp",
+    "guv_ao_ergebnis": "de-gaap-ci:is.netIncome.worksExtraordinaryResult",
+
+    "guv_steuern_einkommen": "de-gaap-ci:is.netIncome.worksTaxesOnIncome",
+    "guv_steuern_sonstige": "de-gaap-ci:is.netIncome.worksOtherTaxes",
+
+    "guv_jahresueberschuss": "de-gaap-ci:is.netIncome"
+  },
+
+  "auffangpositionen": {
+    "_comment": "If all detail positions in a group are 0 but the sum > 0, write to catch-all",
+    "immaterielleVG": {
+      "summeKey": "immaterielleVG_summe",
+      "detailKeys": ["immaterielleVG_schutzrechte", "immaterielleVG_konzessionen", "immaterielleVG_firmenwert", "immaterielleVG_anzahlungen"],
+      "auffangTag": "de-gaap-ci:bs.ass.fixAss.intangAss.other"
+    },
+    "sachanlagen": {
+      "summeKey": "sachanlagen_summe",
+      "detailKeys": ["sachanlagen_grundstuecke", "sachanlagen_maschinen", "sachanlagen_bga", "sachanlagen_anzahlungen"],
+      "auffangTag": "de-gaap-ci:bs.ass.fixAss.tan.other"
+    },
+    "finanzanlagen": {
+      "summeKey": "finanzanlagen_summe",
+      "detailKeys": ["finanzanlagen_verbundenU", "finanzanlagen_ausleihungenVerbundenU", "finanzanlagen_beteiligungen", "finanzanlagen_ausleihungenBeteiligungen", "finanzanlagen_wertpapiere", "finanzanlagen_sonstigeAusleihungen"],
+      "auffangTag": "de-gaap-ci:bs.ass.fixAss.fin.other"
+    },
+    "vorraete": {
+      "summeKey": "vorraete_summe",
+      "detailKeys": ["vorraete_roh", "vorraete_unfertig", "vorraete_fertig", "vorraete_anzahlungen"],
+      "auffangTag": "de-gaap-ci:bs.ass.currAss.worksInvent.worksOtherInvent"
+    },
+    "forderungen": {
+      "summeKey": "forderungen_summe",
+      "detailKeys": ["forderungen_lul", "forderungen_verbundenU", "forderungen_beteiligungen"],
+      "auffangTag": "de-gaap-ci:bs.ass.currAss.worksOtherAss"
+    },
+    "wertpapiere_uv": {
+      "summeKey": "wertpapiere_uv_summe",
+      "detailKeys": ["wertpapiere_uv_verbundenU"],
+      "auffangTag": "de-gaap-ci:bs.ass.currAss.worksOtherSecurities"
+    },
+    "rueckstellungen": {
+      "summeKey": "rueckstellungen_summe",
+      "detailKeys": ["rueckstellungen_pensionen", "rueckstellungen_steuern"],
+      "auffangTag": "de-gaap-ci:bs.eqLiab.worksProvisions.worksOtherProv"
+    },
+    "verbindlichkeiten": {
+      "summeKey": "verbindlichkeiten_summe",
+      "detailKeys": ["verbindlichkeiten_anleihen", "verbindlichkeiten_banken", "verbindlichkeiten_anzahlungen", "verbindlichkeiten_lul", "verbindlichkeiten_wechsel", "verbindlichkeiten_verbundenU", "verbindlichkeiten_beteiligungen"],
+      "auffangTag": "de-gaap-ci:bs.eqLiab.worksLiab.worksOtherLiab"
+    }
+  },
+
+  "mussfelder": [
+    "de-gaap-ci:bs.ass",
+    "de-gaap-ci:bs.ass.fixAss",
+    "de-gaap-ci:bs.ass.fixAss.intangAss",
+    "de-gaap-ci:bs.ass.fixAss.tan",
+    "de-gaap-ci:bs.ass.fixAss.fin",
+    "de-gaap-ci:bs.ass.currAss",
+    "de-gaap-ci:bs.ass.currAss.worksInvent",
+    "de-gaap-ci:bs.ass.currAss.worksDebtors",
+    "de-gaap-ci:bs.ass.currAss.worksSecurities",
+    "de-gaap-ci:bs.ass.currAss.worksChequeCash",
+    "de-gaap-ci:bs.eqLiab",
+    "de-gaap-ci:bs.eqLiab.equity",
+    "de-gaap-ci:bs.eqLiab.equity.subsc",
+    "de-gaap-ci:bs.eqLiab.equity.worksRevRes",
+    "de-gaap-ci:bs.eqLiab.equity.worksNetIncome",
+    "de-gaap-ci:bs.eqLiab.worksProvisions",
+    "de-gaap-ci:bs.eqLiab.worksLiab",
+    "de-gaap-ci:is.netIncome",
+    "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksRevenue",
+    "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp",
+    "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp",
+    "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr",
+    "de-gaap-ci:is.netIncome.regular.operatingTC.worksOtherOpExp",
+    "de-gaap-ci:is.netIncome.worksTaxesOnIncome",
+    "de-gaap-ci:is.netIncome.worksOtherTaxes"
+  ],
+
+  "stammdatenMapping": {
+    "_comment": "XBRL tags for company master data (reported in current duration context)",
+    "firmenname": "de-gaap-ci:genInfo.company.id.name",
+    "rechtsform": "de-gaap-ci:genInfo.company.id.legalStatus",
+    "strasse": "de-gaap-ci:genInfo.company.id.street",
+    "plz": "de-gaap-ci:genInfo.company.id.zipCode",
+    "ort": "de-gaap-ci:genInfo.company.id.city",
+    "geschaeftsfuehrer": "de-gaap-ci:genInfo.company.id.managingDirector",
+    "handelsregisterNr": "de-gaap-ci:genInfo.company.id.registerEntry",
+    "registergericht": "de-gaap-ci:genInfo.company.id.registerCourt",
+    "wirtschaftsjahrVon": "de-gaap-ci:genInfo.company.id.fiscalYearBegin",
+    "wirtschaftsjahrBis": "de-gaap-ci:genInfo.company.id.fiscalYearEnd",
+    "bilanzstichtag": "de-gaap-ci:genInfo.company.id.balanceSheetDate",
+    "wzCode": "de-gaap-ci:genInfo.company.id.industryCode",
+    "bilanzaufstellung": "de-gaap-ci:genInfo.doc.type",
+    "uebermittlungsanlass": "de-gaap-ci:genInfo.doc.occasion",
+    "ergebnisverwendung": "de-gaap-ci:genInfo.doc.profitAppropriationType",
+    "ausschuettungsbetrag": "de-gaap-ci:genInfo.doc.profitDistributionAmount"
+  }
+}
