@@ -272,6 +272,29 @@ int main(int argc, char* argv[]) {
                 if (!quiet) {
                     std::cout << "XBRL gespeichert: " << outPath.string() << "\n";
                 }
+
+                // Also generate wrapped XML for debugging (if HerstellerID provided)
+                std::string effectiveHerstellerID = herstellerID.empty() ? stamm.herstellerID : herstellerID;
+                if (!effectiveHerstellerID.empty()) {
+                    try {
+                        ElsterConfig elsterConfig;
+                        elsterConfig.herstellerID = effectiveHerstellerID;
+                        elsterConfig.datenLieferant = stamm.datenLieferant.empty() ? stamm.firmenname : stamm.datenLieferant;
+
+                        ElsterWrapper wrapper(elsterConfig);
+                        std::string wrappedXml = wrapper.wrap(xbrlContent, stamm, testMode);
+
+                        fs::path wrappedPath = fs::path(outputDir) / ("ebilanz-" + year + "-elster.xml");
+                        std::ofstream wrappedOut(wrappedPath);
+                        wrappedOut << wrappedXml;
+                        spdlog::info("ElsterBasis XML gespeichert: {}", wrappedPath.string());
+                        if (!quiet) {
+                            std::cout << "ElsterBasis XML gespeichert: " << wrappedPath.string() << "\n";
+                        }
+                    } catch (const std::exception& ex) {
+                        spdlog::warn("Warnung: ElsterBasis-Wrapping fehlgeschlagen: {}", ex.what());
+                    }
+                }
             }
 
             // If output-only mode (no cert provided), stop here
