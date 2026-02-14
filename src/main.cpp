@@ -1,3 +1,4 @@
+#include "elster_wrapper.h"
 #include "eric_connector.h"
 #include "excel_parser.h"
 #include "logger.h"
@@ -118,6 +119,10 @@ int main(int argc, char* argv[]) {
     std::string xbrlFile;
     app.add_option("-x,--xbrl", xbrlFile, "XBRL-Datei direkt senden (überspringt Excel-Parsing)")
         ->check(CLI::ExistingFile);
+
+    // HerstellerID
+    std::string herstellerID;
+    app.add_option("--hersteller-id", herstellerID, "ELSTER HerstellerID (erforderlich für Versand)");
 
     // Logging
     bool verbose = false;
@@ -275,6 +280,38 @@ int main(int argc, char* argv[]) {
                     std::cout << "\nXBRL-Datei erfolgreich generiert.\n";
                 }
                 return static_cast<int>(ErrorCode::SUCCESS);
+            }
+
+            // ── Wrap XBRL in ElsterBasis envelope for ERiC submission ──
+            if (!validateOnly && !outputOnly) {
+                // Determine HerstellerID: CLI arg > Excel field
+                std::string effectiveHerstellerID = herstellerID.empty() ? stamm.herstellerID : herstellerID;
+
+                if (effectiveHerstellerID.empty()) {
+                    std::cerr << "FEHLER: HerstellerID erforderlich für Versand.\n";
+                    std::cerr << "Bitte angeben: --hersteller-id XXXXX oder in Excel-Datei (Zeile 24)\n";
+                    std::cerr << "HerstellerID beantragen: https://www.elster.de/elsterweb/entwickler\n";
+                    return static_cast<int>(ErrorCode::VALIDATION_FAILED);
+                }
+
+                ElsterConfig elsterConfig;
+                elsterConfig.herstellerID = effectiveHerstellerID;
+                elsterConfig.datenLieferant = stamm.datenLieferant.empty() ? stamm.firmenname : stamm.datenLieferant;
+
+                ElsterWrapper wrapper(elsterConfig);
+                xbrlContent = wrapper.wrap(xbrlContent, stamm, testMode);
+
+                // Save wrapped XML if output dir specified
+                if (!outputDir.empty()) {
+                    std::string year = extractYear(stamm.wirtschaftsjahrBis);
+                    fs::path wrappedPath = fs::path(outputDir) / ("ebilanz-" + year + "-elster.xml");
+                    std::ofstream wrappedOut(wrappedPath);
+                    wrappedOut << xbrlContent;
+                    spdlog::info("ElsterBasis XML gespeichert: {}", wrappedPath.string());
+                    if (!quiet) {
+                        std::cout << "ElsterBasis XML gespeichert: " << wrappedPath.string() << "\n";
+                    }
+                }
             }
         }
 

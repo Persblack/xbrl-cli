@@ -24,6 +24,10 @@ logs/
 # Test data (generated)
 tests/testdata/*.xlsx
 templates/*.xlsx
+*.xlsx
+*.pdf
+
+taxonomy-v6.8
 
 # ERiC SDK (proprietary - not included in repo)
 external/eric-sdk/lib/

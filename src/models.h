@@ -47,6 +47,8 @@ struct Stammdaten {
     bool erstjahr = false;             // Steuert Vorjahr-Handling
     std::string ergebnisverwendung;    // "thesaurierung" | "ausschuettung" | "teilausschuettung"
     double ausschuettungsbetrag = 0.0;
+    std::string herstellerID;          // ELSTER HerstellerID (required for submission)
+    std::string datenLieferant;        // Optional: override for DatenLieferant field
 };
 
 // ── BilanzData ───────────────────────────────────────────────────────────────

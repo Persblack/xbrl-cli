@@ -142,6 +142,8 @@ Stammdaten ExcelParser::readStammdaten(const std::string& filepath,
     data.erstjahr = readBool(ws, "B21");
     data.ergebnisverwendung = normalizeErgebnisverwendung(readString(ws, "B22"));
     data.ausschuettungsbetrag = readDouble(ws, "B23");
+    data.herstellerID = readString(ws, "B24");
+    data.datenLieferant = readString(ws, "B25");
 
     // Compute bundeseinheitliche Steuernummer if not provided
     if (data.steuernummerBund.empty() && !data.steuernummer.empty() && !data.finanzamtsNummer.empty()) {

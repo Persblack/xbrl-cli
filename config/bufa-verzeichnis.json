@@ -4,81 +4,97 @@
   "bundeslaender": {
     "baden_wuerttemberg": {
       "bufaPrefix": ["28"],
+      "bundeslandCode": "BW",
       "format": "28FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "bayern": {
       "bufaPrefix": ["91", "92"],
+      "bundeslandCode": "BY",
       "format": "9FFF0BBBUUUUUP",
       "description": "FFF=BuFa(1-3), BBB=Bezirk(4-6), UUUUU=Unternr(7-11), P=Prüf(12)"
     },
     "berlin": {
       "bufaPrefix": ["11"],
+      "bundeslandCode": "BE",
       "format": "11FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "brandenburg": {
       "bufaPrefix": ["30"],
+      "bundeslandCode": "BB",
       "format": "30FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "bremen": {
       "bufaPrefix": ["24"],
+      "bundeslandCode": "HB",
       "format": "24FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "hamburg": {
       "bufaPrefix": ["22"],
+      "bundeslandCode": "HH",
       "format": "22FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "hessen": {
       "bufaPrefix": ["26"],
+      "bundeslandCode": "HE",
       "format": "26FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "mecklenburg_vorpommern": {
       "bufaPrefix": ["40"],
+      "bundeslandCode": "MV",
       "format": "40FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "niedersachsen": {
       "bufaPrefix": ["23"],
+      "bundeslandCode": "NI",
       "format": "23FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "nordrhein_westfalen": {
       "bufaPrefix": ["51", "52", "53"],
+      "bundeslandCode": "NW",
       "format": "5FFF0BBBBUUUUP",
       "description": "FFF=BuFa(1-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "rheinland_pfalz": {
       "bufaPrefix": ["27"],
+      "bundeslandCode": "RP",
       "format": "27FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "saarland": {
       "bufaPrefix": ["10"],
+      "bundeslandCode": "SL",
       "format": "10FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "sachsen": {
       "bufaPrefix": ["32"],
+      "bundeslandCode": "SN",
       "format": "32FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "sachsen_anhalt": {
       "bufaPrefix": ["31"],
+      "bundeslandCode": "ST",
       "format": "31FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "schleswig_holstein": {
       "bufaPrefix": ["21"],
+      "bundeslandCode": "SH",
       "format": "21FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     },
     "thueringen": {
       "bufaPrefix": ["41"],
+      "bundeslandCode": "TH",
       "format": "41FF0BBBBUUUUP",
       "description": "FF=BuFa(2-3), BBBB=Bezirk(4-7), UUUU=Unternr(8-11), P=Prüf(12)"
     }

@@ -36,6 +36,7 @@ set(LIB_SOURCES
     src/excel_parser.cpp
     src/validator.cpp
     src/xbrl_generator.cpp
+    src/elster_wrapper.cpp
     src/eric_connector.cpp
 )
 
@@ -105,6 +106,7 @@ add_executable(ebilanz_tests
     tests/test_steuernummer.cpp
     tests/test_validator.cpp
     tests/test_xbrl_generator.cpp
+    tests/test_elster_wrapper.cpp
     tests/test_excel_parser.cpp
     tests/test_eric.cpp
 )
