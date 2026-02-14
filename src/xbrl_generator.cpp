@@ -21,32 +21,34 @@ std::string formatDecimal(double value) {
 void createContext(pugi::xml_node& root, const std::string& id,
                    const std::string& startDate, const std::string& endDate,
                    const std::string& steuernummerBund) {
-    auto context = root.append_child("xbrli:context");
+    // Use unprefixed elements (default xbrli namespace)
+    auto context = root.append_child("context");
     context.append_attribute("id") = id.c_str();
 
-    auto entity = context.append_child("xbrli:entity");
-    auto identifier = entity.append_child("xbrli:identifier");
+    auto entity = context.append_child("entity");
+    auto identifier = entity.append_child("identifier");
     identifier.append_attribute("scheme") = "http://www.rzf-nrw.de/Steuernummer";
     identifier.text().set(steuernummerBund.c_str());
 
-    auto period = context.append_child("xbrli:period");
-    period.append_child("xbrli:startDate").text().set(startDate.c_str());
-    period.append_child("xbrli:endDate").text().set(endDate.c_str());
+    auto period = context.append_child("period");
+    period.append_child("startDate").text().set(startDate.c_str());
+    period.append_child("endDate").text().set(endDate.c_str());
 }
 
 void createInstantContext(pugi::xml_node& root, const std::string& id,
                           const std::string& date,
                           const std::string& steuernummerBund) {
-    auto context = root.append_child("xbrli:context");
+    // Use unprefixed elements (default xbrli namespace)
+    auto context = root.append_child("context");
     context.append_attribute("id") = id.c_str();
 
-    auto entity = context.append_child("xbrli:entity");
-    auto identifier = entity.append_child("xbrli:identifier");
+    auto entity = context.append_child("entity");
+    auto identifier = entity.append_child("identifier");
     identifier.append_attribute("scheme") = "http://www.rzf-nrw.de/Steuernummer";
     identifier.text().set(steuernummerBund.c_str());
 
-    auto period = context.append_child("xbrli:period");
-    period.append_child("xbrli:instant").text().set(date.c_str());
+    auto period = context.append_child("period");
+    period.append_child("instant").text().set(date.c_str());
 }
 
 void addMonetaryFact(pugi::xml_node& root, const std::string& tag,
@@ -85,8 +87,9 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
     decl.append_attribute("encoding") = "UTF-8";
 
     // Root element with namespaces
-    auto root = doc.append_child("xbrli:xbrl");
-    root.append_attribute("xmlns:xbrli") = "http://www.xbrl.org/2003/instance";
+    // NOTE: ERiC expects xbrli as the DEFAULT namespace (xmlns), not prefixed
+    auto root = doc.append_child("xbrl");
+    root.append_attribute("xmlns") = "http://www.xbrl.org/2003/instance";
     root.append_attribute("xmlns:link") = config_.linkNamespace.c_str();
     root.append_attribute("xmlns:xlink") = config_.xlinkNamespace.c_str();
     root.append_attribute("xmlns:de-gaap-ci") = config_.namespaceUri.c_str();
@@ -117,9 +120,9 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
     createInstantContext(root, "prior_instant", vorjahrBis, stamm.steuernummerBund);
 
     // ── Unit (EUR) ──
-    auto unit = root.append_child("xbrli:unit");
+    auto unit = root.append_child("unit");
     unit.append_attribute("id") = "EUR";
-    unit.append_child("xbrli:measure").text().set("iso4217:EUR");
+    unit.append_child("measure").text().set("iso4217:EUR");
 
     // ── Stammdaten as XBRL facts ──
     for (const auto& [field, tag] : config_.stammdatenMapping) {

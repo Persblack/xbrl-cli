@@ -104,40 +104,40 @@
 
     "summe_passiva": "de-gaap-ci:bs.eqLiab",
 
-    "_comment13": "GuV — Gesamtkostenverfahren",
-    "guv_umsatzerloese": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksRevenue",
-    "guv_bestandsveraenderungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksChangesInventories",
-    "guv_eigenleistungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksOwnWork",
-    "guv_sonstige_ertraege": "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksOtherOpIncome",
+    "_comment13": "GuV — Gesamtkostenverfahren (Corrected for HGB Taxonomy 6.8)",
+    "guv_umsatzerloese": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalOutput.netSales",
+    "guv_bestandsveraenderungen": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalOutput.changesInventories",
+    "guv_eigenleistungen": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalOutput.ownWorkCapitalized",
+    "guv_sonstige_ertraege": "de-gaap-ci:is.netIncome.regular.operatingTC.otherOpRevenue",
 
-    "guv_material_roh": "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp.worksRawMat",
-    "guv_material_leistungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp.worksPurchServices",
-    "guv_material_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.worksMaterialExp",
+    "guv_material_roh": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalCost.rawMatSupplies",
+    "guv_material_leistungen": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalCost.purchServices",
+    "guv_material_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalCost.costOfMat",
 
-    "guv_personal_loehne": "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp.worksWages",
-    "guv_personal_sozial": "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp.worksSocialSec",
-    "guv_personal_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.worksStaffExp",
+    "guv_personal_loehne": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalCost.staffCost.wages",
+    "guv_personal_sozial": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalCost.staffCost.socSec",
+    "guv_personal_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalCost.staffCost",
 
-    "guv_abschreibungen_immateriell_sach": "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr.worksDeprIntangFixAss",
-    "guv_abschreibungen_umlauf": "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr.worksDeprCurrAss",
-    "guv_abschreibungen_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.worksDepr",
+    "guv_abschreibungen_immateriell_sach": "de-gaap-ci:is.netIncome.regular.operatingTC.depr.intangFixAss",
+    "guv_abschreibungen_umlauf": "de-gaap-ci:is.netIncome.regular.operatingTC.depr.currAss",
+    "guv_abschreibungen_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.depr",
 
-    "guv_sonstige_aufwendungen": "de-gaap-ci:is.netIncome.regular.operatingTC.worksOtherOpExp",
+    "guv_sonstige_aufwendungen": "de-gaap-ci:is.netIncome.regular.operatingTC.otherCost",
 
-    "guv_ertraege_beteiligungen": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksIncomeFromParticipation",
-    "guv_ertraege_wertpapiere": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksIncomeFromOtherSecurities",
-    "guv_zins_ertraege": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksOtherInterestAndIncome",
-    "guv_abschreibungen_finanz": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksDeprFinAss",
-    "guv_zins_aufwendungen": "de-gaap-ci:is.netIncome.regular.worksFinResult.worksInterestAndExp",
+    "guv_ertraege_beteiligungen": "de-gaap-ci:is.netIncome.regular.fin.netParticipation",
+    "guv_ertraege_wertpapiere": "de-gaap-ci:is.netIncome.regular.fin.netParticipation.earningSecurities.interestDividend",
+    "guv_zins_ertraege": "de-gaap-ci:is.netIncome.regular.fin.netInterest.income",
+    "guv_abschreibungen_finanz": "de-gaap-ci:is.netIncome.regular.fin.deprFinAss",
+    "guv_zins_aufwendungen": "de-gaap-ci:is.netIncome.regular.fin.netInterest.expenses",
 
     "guv_ergebnis_gewoehnlich": "de-gaap-ci:is.netIncome.regular",
 
-    "guv_ao_ertraege": "de-gaap-ci:is.netIncome.worksExtraordinaryResult.worksExtraordinaryIncome",
-    "guv_ao_aufwendungen": "de-gaap-ci:is.netIncome.worksExtraordinaryResult.worksExtraordinaryExp",
-    "guv_ao_ergebnis": "de-gaap-ci:is.netIncome.worksExtraordinaryResult",
+    "guv_ao_ertraege": "de-gaap-ci:is.netIncome.extraordinaryResult.income",
+    "guv_ao_aufwendungen": "de-gaap-ci:is.netIncome.extraordinaryResult.expenses",
+    "guv_ao_ergebnis": "de-gaap-ci:is.netIncome.extraordinaryResult",
 
-    "guv_steuern_einkommen": "de-gaap-ci:is.netIncome.worksTaxesOnIncome",
-    "guv_steuern_sonstige": "de-gaap-ci:is.netIncome.worksOtherTaxes",
+    "guv_steuern_einkommen": "de-gaap-ci:is.netIncome.taxesOnIncome",
+    "guv_steuern_sonstige": "de-gaap-ci:is.netIncome.otherTaxes",
 
     "guv_jahresueberschuss": "de-gaap-ci:is.netIncome"
   },
