@@ -131,8 +131,8 @@ TEST_CASE("XBRLGenerator: Grundstruktur") {
     }
 
     SECTION("Root element with namespaces") {
-        REQUIRE(xbrl.find("xbrli:xbrl") != std::string::npos);
-        REQUIRE(xbrl.find("xmlns:xbrli") != std::string::npos);
+        REQUIRE(xbrl.find("<xbrl") != std::string::npos);
+        REQUIRE(xbrl.find("xmlns=\"http://www.xbrl.org/2003/instance\"") != std::string::npos);
         REQUIRE(xbrl.find("xmlns:de-gaap-ci") != std::string::npos);
         REQUIRE(xbrl.find("xmlns:iso4217") != std::string::npos);
     }
