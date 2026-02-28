@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "eric_connector.h"
+#include "elster_wrapper.h"
+#include "models.h"
 
 #include <filesystem>
 
@@ -24,31 +26,28 @@ TEST_CASE("ERiCConnector: Initialisierung", "[eric][integration]") {
     }
 }
 
-TEST_CASE("ERiCConnector: Zertifikat laden ohne Initialisierung", "[eric][integration]") {
-    // Create a new connector but force it to think it's not initialized
-    // (This test is to verify error handling)
+TEST_CASE("ERiCConnector: Zertifikat laden ohne Datei", "[eric][integration]") {
+    ERiCConnector connector;
+    REQUIRE(connector.isAvailable() == true);
 
-    SECTION("Fehler bei nicht-initialisiertem SDK") {
-        ERiCConnector connector;
-        // Note: Connector initializes automatically, so this test would need
-        // a mock or different approach to test the error path
-        // For now, we just verify the API exists
-        REQUIRE(connector.isAvailable() == true);
+    SECTION("Zertifikat laden mit nicht-existierender Datei schlägt fehl") {
+        bool loaded = connector.loadCertificate("/tmp/nonexistent.pfx", "dummy");
+        REQUIRE(loaded == false);
     }
 }
 
-TEST_CASE("ERiCConnector: Validierung ohne Zertifikat", "[eric][integration]") {
+TEST_CASE("ERiCConnector: Validierung mit ElsterBasis", "[eric][integration]") {
     ERiCConnector connector;
 
     REQUIRE(connector.isAvailable() == true);
 
-    SECTION("XBRL validieren (einfacher Test)") {
-        // Minimal XBRL content for testing
+    SECTION("XBRL validieren via ElsterBasis-Envelope") {
+        // Minimal XBRL content
         std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance">
-  <context id="test">
+  <context id="current_instant">
     <entity>
-      <identifier scheme="http://www.rzf-nrw.de/Steuernummer">1234567890123</identifier>
+      <identifier scheme="http://www.rzf-nrw.de/Steuernummer">5133081508155</identifier>
     </entity>
     <period>
       <instant>2024-12-31</instant>
@@ -56,7 +55,18 @@ TEST_CASE("ERiCConnector: Validierung ohne Zertifikat", "[eric][integration]") {
   </context>
 </xbrl>)";
 
-        auto result = connector.validate(xbrlContent);
+        // Wrap in ElsterBasis envelope (what ERiC actually expects)
+        ElsterConfig config;
+        config.herstellerID = "00000";
+        ElsterWrapper wrapper(config);
+
+        Stammdaten stamm;
+        stamm.finanzamtsNummer = "5133";
+        stamm.steuernummerBund = "5133081508155";
+
+        std::string elsterXml = wrapper.wrap(xbrlContent, stamm, true);
+
+        auto result = connector.validate(elsterXml);
 
         // We expect validation might fail due to incomplete XBRL,
         // but the connector should not crash

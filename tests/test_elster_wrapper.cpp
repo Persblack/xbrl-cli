@@ -13,6 +13,7 @@ TEST_CASE("ElsterWrapper: Basic wrapper structure", "[elster]") {
     stamm.firmenname = "Test GmbH";
     stamm.steuernummer = "91/123/45678";
     stamm.steuernummerBund = "9181012345678";
+    stamm.bilanzstichtag = "2024-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance">
@@ -40,7 +41,7 @@ TEST_CASE("ElsterWrapper: Basic wrapper structure", "[elster]") {
     auto transferHeader = elster.child("TransferHeader");
     REQUIRE(transferHeader);
     REQUIRE(std::string(transferHeader.attribute("version").value()) == "11");
-    REQUIRE(std::string(transferHeader.child("Verfahren").text().as_string()) == "ElsterErklaerung");
+    REQUIRE(std::string(transferHeader.child("Verfahren").text().as_string()) == "ElsterBilanz");
     REQUIRE(std::string(transferHeader.child("DatenArt").text().as_string()) == "Bilanz");
     REQUIRE(std::string(transferHeader.child("HerstellerID").text().as_string()) == "12345");
     REQUIRE(std::string(transferHeader.child("DatenLieferant").text().as_string()) == "Test GmbH");
@@ -67,10 +68,21 @@ TEST_CASE("ElsterWrapper: Basic wrapper structure", "[elster]") {
     REQUIRE(std::string(empfaengerFA.attribute("id").value()) == "F");
     REQUIRE(std::string(empfaengerFA.text().as_string()) == "9181");
 
-    // Verify Nutzdaten contains XBRL
+    // Verify Nutzdaten contains EBilanz wrapper with XBRL inside
     auto nutzdaten = nutzdatenblock.child("Nutzdaten");
     REQUIRE(nutzdaten);
-    auto xbrlRoot = nutzdaten.child("xbrl");
+    auto ebilanzEl = nutzdaten.child("ebilanz:EBilanz");
+    REQUIRE(ebilanzEl);
+    REQUIRE(std::string(ebilanzEl.attribute("xmlns:ebilanz").value()) == "http://rzf.fin-nrw.de/RMS/EBilanz/2016/XMLSchema");
+    REQUIRE(std::string(ebilanzEl.attribute("version").value()) == "1");
+
+    // Verify stichtag in YYYYMMDD format
+    auto stichtag = ebilanzEl.child("ebilanz:stichtag");
+    REQUIRE(stichtag);
+    REQUIRE(std::string(stichtag.text().as_string()) == "20241231");
+
+    // Verify XBRL root is inside EBilanz
+    auto xbrlRoot = ebilanzEl.child("xbrl");
     REQUIRE(xbrlRoot);
 }
 
@@ -81,6 +93,7 @@ TEST_CASE("ElsterWrapper: Testmerker handling", "[elster]") {
     Stammdaten stamm;
     stamm.finanzamtsNummer = "2801";
     stamm.firmenname = "Test GmbH";
+    stamm.bilanzstichtag = "2024-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance">
@@ -115,6 +128,7 @@ TEST_CASE("ElsterWrapper: Bundesland mapping", "[elster]") {
 
     Stammdaten stamm;
     stamm.firmenname = "Test GmbH";
+    stamm.bilanzstichtag = "2024-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance"></xbrl>)";
@@ -169,6 +183,7 @@ TEST_CASE("ElsterWrapper: NutzdatenTicket uniqueness", "[elster]") {
     Stammdaten stamm;
     stamm.finanzamtsNummer = "9181";
     stamm.firmenname = "Test GmbH";
+    stamm.bilanzstichtag = "2024-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance"></xbrl>)";
@@ -203,6 +218,7 @@ TEST_CASE("ElsterWrapper: XBRL content preservation", "[elster]") {
     Stammdaten stamm;
     stamm.finanzamtsNummer = "9181";
     stamm.firmenname = "Test GmbH";
+    stamm.bilanzstichtag = "2023-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance" xmlns:de-gaap-ci="http://www.xbrl.de/taxonomies/de-gaap-ci">
@@ -225,7 +241,9 @@ TEST_CASE("ElsterWrapper: XBRL content preservation", "[elster]") {
 
     auto nutzdaten = doc.child("Elster").child("DatenTeil")
                         .child("Nutzdatenblock").child("Nutzdaten");
-    auto xbrlRoot = nutzdaten.child("xbrl");
+    auto ebilanzEl = nutzdaten.child("ebilanz:EBilanz");
+    REQUIRE(ebilanzEl);
+    auto xbrlRoot = ebilanzEl.child("xbrl");
 
     REQUIRE(xbrlRoot);
 
@@ -251,6 +269,7 @@ TEST_CASE("ElsterWrapper: DatenLieferant override", "[elster]") {
     Stammdaten stamm;
     stamm.finanzamtsNummer = "9181";
     stamm.firmenname = "Original Firmenname";
+    stamm.bilanzstichtag = "2024-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance"></xbrl>)";
@@ -279,6 +298,7 @@ TEST_CASE("ElsterWrapper: XML well-formedness", "[elster]") {
     Stammdaten stamm;
     stamm.finanzamtsNummer = "9181";
     stamm.firmenname = "Test GmbH";
+    stamm.bilanzstichtag = "2024-12-31";
 
     std::string xbrlContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <xbrl xmlns="http://www.xbrl.org/2003/instance"></xbrl>)";

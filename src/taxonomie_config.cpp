@@ -18,6 +18,8 @@ TaxonomieConfig loadTaxonomieConfig(const std::string& jsonPath) {
     config.version = j.value("version", "");
     config.namespaceUri = j.value("namespace", "");
     config.schemaRef = j.value("schemaRef", "");
+    config.gcdNamespace = j.value("gcdNamespace", "");
+    config.gcdSchemaRef = j.value("gcdSchemaRef", "");
     config.linkNamespace = j.value("linkNamespace", "http://www.xbrl.org/2003/linkbase");
     config.xlinkNamespace = j.value("xlinkNamespace", "http://www.w3.org/1999/xlink");
 

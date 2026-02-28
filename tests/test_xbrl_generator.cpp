@@ -16,24 +16,24 @@ static TaxonomieConfig createTestConfig() {
     // Minimal mapping for tests
     config.mapping["summe_aktiva"] = "de-gaap-ci:bs.ass";
     config.mapping["summe_passiva"] = "de-gaap-ci:bs.eqLiab";
-    config.mapping["gezeichnetes_kapital"] = "de-gaap-ci:bs.eqLiab.equity.subsc";
+    config.mapping["gezeichnetes_kapital"] = "de-gaap-ci:bs.eqLiab.equity.subscribed";
     config.mapping["jahresueberschuss"] = "de-gaap-ci:bs.eqLiab.equity.worksNetIncome";
     config.mapping["kassenbestand"] = "de-gaap-ci:bs.ass.currAss.worksChequeCash";
-    config.mapping["sachanlagen_bga"] = "de-gaap-ci:bs.ass.fixAss.tan.otherEq";
+    config.mapping["sachanlagen_bga"] = "de-gaap-ci:bs.ass.fixAss.tan.otherEquipm";
 
-    config.mapping["guv_umsatzerloese"] = "de-gaap-ci:is.netIncome.regular.operatingTC.worksGrossProfit.worksRevenue";
-    config.mapping["guv_sonstige_aufwendungen"] = "de-gaap-ci:is.netIncome.regular.operatingTC.worksOtherOpExp";
+    config.mapping["guv_umsatzerloese"] = "de-gaap-ci:is.netIncome.regular.operatingTC.grossTradingProfit.totalOutput.netSales";
+    config.mapping["guv_sonstige_aufwendungen"] = "de-gaap-ci:is.netIncome.regular.operatingTC.otherCost";
     config.mapping["guv_jahresueberschuss"] = "de-gaap-ci:is.netIncome";
 
     // Auffangposition test
-    config.mapping["immaterielleVG_konzessionen"] = "de-gaap-ci:bs.ass.fixAss.intangAss.concessionsPIR";
-    config.mapping["immaterielleVG_firmenwert"] = "de-gaap-ci:bs.ass.fixAss.intangAss.goodwill";
-    config.mapping["immaterielleVG_summe"] = "de-gaap-ci:bs.ass.fixAss.intangAss";
+    config.mapping["immaterielleVG_konzessionen"] = "de-gaap-ci:bs.ass.fixAss.intan.concessionBrands";
+    config.mapping["immaterielleVG_firmenwert"] = "de-gaap-ci:bs.ass.fixAss.intan.goodwill";
+    config.mapping["immaterielleVG_summe"] = "de-gaap-ci:bs.ass.fixAss.intan";
 
     AuffangPosition ap;
     ap.summeKey = "immaterielleVG_summe";
     ap.detailKeys = {"immaterielleVG_konzessionen", "immaterielleVG_firmenwert"};
-    ap.auffangTag = "de-gaap-ci:bs.ass.fixAss.intangAss.other";
+    ap.auffangTag = "de-gaap-ci:bs.ass.fixAss.intan.other";
     config.auffangpositionen["immaterielleVG"] = ap;
 
     // Mussfelder
@@ -284,7 +284,7 @@ TEST_CASE("XBRLGenerator: Auffangpositionen") {
         bilanz.positionen["immaterielleVG_summe"] = 5000.0;
 
         std::string xbrl = generator.generate(stamm, bilanz, guv);
-        REQUIRE(xbrl.find("de-gaap-ci:bs.ass.fixAss.intangAss.other") != std::string::npos);
+        REQUIRE(xbrl.find("de-gaap-ci:bs.ass.fixAss.intan.other") != std::string::npos);
     }
 
     SECTION("Detail>0 => Auffangposition wird NICHT geschrieben") {

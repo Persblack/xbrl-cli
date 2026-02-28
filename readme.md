@@ -54,14 +54,14 @@ Nutze `templates/ebilanz-template.xlsx`:
 
 | Sheet | Inhalt |
 |-------|--------|
-| **Stammdaten** | Firmendaten, Steuernummer, BuFa-Nr, Wirtschaftsjahr, **HerstellerID** |
+| **Stammdaten** | Firmendaten, Steuernummer, BuFa-Nr, Wirtschaftsjahr |
 | **Bilanz** | Aktiva & Passiva nach HGB §266 (aktuelles + Vorjahr) |
 | **GuV** | Gewinn- und Verlustrechnung (Gesamtkostenverfahren) |
 | **Validierung** | Automatische Checks (eingebaute Formeln) |
 | **Info** | Hilfe & Anleitung |
 
-**Wichtig:**
-- **HerstellerID** (Zeile 24): ELSTER-Hersteller-ID vom Entwicklerportal
+**Hinweis:**
+- **HerstellerID** ist bereits eingebaut (`00000`). In Excel (Zeile 24) oder via `--hersteller-id` nur zum Überschreiben.
 - **DatenLieferant** (Zeile 25): Optional, falls abweichend vom Firmennamen
 
 ### 4. Daten validieren
@@ -80,7 +80,7 @@ Prüft:
 ### 5. XBRL generieren
 
 ```bash
-./build/ebilanz-submit --output /tmp --hersteller-id 74458 meine-bilanz.xlsx
+./build/ebilanz-submit --output /tmp meine-bilanz.xlsx
 ```
 
 Erzeugt:
@@ -90,7 +90,7 @@ Erzeugt:
 ### 6. Test-Übermittlung (optional)
 
 ```bash
-./build/ebilanz-submit --test --cert zertifikat.pfx --hersteller-id 74458 meine-bilanz.xlsx
+./build/ebilanz-submit --test --cert zertifikat.pfx meine-bilanz.xlsx
 ```
 
 ⚠️ **Hinweis:** ERiC SDK auf macOS hat Probleme mit Code-Signing der Plugin-Bibliotheken. Verwende stattdessen die generierten XML-Dateien für manuelle Übermittlung.
@@ -99,23 +99,15 @@ Erzeugt:
 
 ## HerstellerID & DatenLieferant
 
-### HerstellerID (Pflicht!)
+### HerstellerID (eingebaut)
 
-**Was ist das?**
-- Eindeutige Kennung für **Software-Entwickler**
-- Von ELSTER vergeben zur Identifikation der Software
-- Wird in jeder Übermittlung mitgesendet
+Die offizielle HerstellerID `00000` (Produkt: „xbrl-cli") ist bereits im Tool hinterlegt. Sie müssen nichts konfigurieren.
 
-**Wo bekomme ich eine?**
-1. Registrierung: https://www.elster.de/elsterweb/entwickler
-2. Antrag auf Entwickler-Zugang stellen
-3. ELSTER vergibt HerstellerID (z.B. `74458`)
-
-**Wie nutzen?**
-- **Via CLI:** `--hersteller-id 74458`
+**Override (nur für Entwicklung/Tests):**
+- **Via CLI:** `--hersteller-id XXXXX`
 - **Via Excel:** Eintragen in Stammdaten Zeile 24
 
-**Wichtig:** Pro Entwickler/Tool, NICHT pro Nutzer!
+Priorität: CLI-Flag > Excel-Feld > Standard (`00000`)
 
 ### DatenLieferant (Optional)
 
@@ -160,7 +152,7 @@ ebilanz-submit [OPTIONEN] <bilanz.xlsx>
 |--------|-------------|
 | `-c, --cert <file>` | ELSTER-Zertifikat (.pfx) |
 | `-p, --password <pw>` | Zertifikat-Passwort (sonst interaktiv) |
-| `--hersteller-id <id>` | ELSTER HerstellerID (Pflicht für Versand!) |
+| `--hersteller-id <id>` | ELSTER HerstellerID (Standard: 00000) |
 
 ### Logging
 
@@ -195,22 +187,22 @@ ebilanz-submit [OPTIONEN] <bilanz.xlsx>
 
 **XBRL generieren (ohne Übermittlung):**
 ```bash
-./ebilanz-submit --output /tmp --hersteller-id 74458 bilanz-2024.xlsx
+./ebilanz-submit --output /tmp bilanz-2024.xlsx
 ```
 
 **Test-Übermittlung:**
 ```bash
-./ebilanz-submit --test --cert zertifikat.pfx --hersteller-id 74458 bilanz-2024.xlsx
+./ebilanz-submit --test --cert zertifikat.pfx bilanz-2024.xlsx
 ```
 
 **Produktiv-Übermittlung:**
 ```bash
-./ebilanz-submit --cert zertifikat.pfx --hersteller-id 74458 bilanz-2024.xlsx
+./ebilanz-submit --cert zertifikat.pfx bilanz-2024.xlsx
 ```
 
 **Mit Passwort-Datei:**
 ```bash
-./ebilanz-submit --cert zertifikat.pfx --password "Geheim123!" --hersteller-id 74458 bilanz-2024.xlsx
+./ebilanz-submit --cert zertifikat.pfx --password "Geheim123!" bilanz-2024.xlsx
 ```
 
 ---
@@ -338,10 +330,6 @@ ctest --output-on-failure
 ### "ERiC Initialisierung fehlgeschlagen: 610001083"
 → macOS blockiert ERiC-Plugins aufgrund von Code-Signing-Problemen
 → **Workaround:** Nutze `--output` und übermittle XML manuell
-
-### "HerstellerID erforderlich für Versand"
-→ Registriere dich bei https://www.elster.de/elsterweb/entwickler
-→ Trage die HerstellerID in Excel (Zeile 24) oder via `--hersteller-id` ein
 
 ### "Bilanz nicht ausgeglichen"
 → Prüfe Excel: Summe Aktiva muss exakt Summe Passiva entsprechen

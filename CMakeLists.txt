@@ -127,7 +127,10 @@ if(WITH_ERIC AND APPLE)
     )
 endif()
 
-catch_discover_tests(ebilanz_tests)
+catch_discover_tests(ebilanz_tests
+    TEST_PREFIX ""
+    PROPERTIES TIMEOUT 60  # ERiC SDK tests can be slow
+)
 
 # Test data generator
 add_executable(create_test_data tests/create_test_data.cpp)

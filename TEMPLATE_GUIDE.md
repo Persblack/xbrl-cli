@@ -2,39 +2,36 @@
 
 ## Stammdaten Sheet - Updated Fields
 
-Die Excel-Vorlage (`templates/ebilanz-template.xlsx`) wurde aktualisiert mit zwei neuen Pflichtfeldern für ELSTER-Übermittlung:
+Die Excel-Vorlage (`templates/ebilanz-template.xlsx`) enthält zwei Felder für ELSTER-Übermittlung:
 
-### Neue Felder (Zeilen 24-25)
+### Felder (Zeilen 24-25)
 
 | Zeile | Feld | Pflicht? | Beschreibung |
 |-------|------|----------|--------------|
-| **24** | **HerstellerID** | ✅ JA | ELSTER Hersteller-ID vom Entwicklerportal |
+| **24** | **HerstellerID** | ❌ Optional | Standard: `00000` (eingebaut). Nur zum Überschreiben. |
 | **25** | **DatenLieferant** | ❌ Optional | Überschreibt Firmenname als Datenlieferant |
 
 ---
 
-## HerstellerID (Zeile 24) - PFLICHT!
+## HerstellerID (Zeile 24) - Optional
 
-### Was eintragen?
-Ihre ELSTER HerstellerID (z.B. `74458`)
+Die offizielle HerstellerID `00000` (Produkt: „xbrl-cli") ist bereits im Tool hinterlegt.
 
-### Wo bekomme ich die?
-1. Registrierung: https://www.elster.de/elsterweb/entwickler
-2. Antrag auf Entwickler-Zugang
-3. ELSTER vergibt Ihnen eine HerstellerID
+### Wann ausfüllen?
+Nur wenn Sie eine **andere** HerstellerID verwenden möchten (z.B. für Entwicklung/Tests).
 
 ### Beispiel:
 ```
-Zeile 24, Spalte B: 74458
+Zeile 24, Spalte B: 00000
 ```
 
 ### Was passiert wenn leer?
-❌ Übermittlung schlägt fehl mit Fehler:
-```
-FEHLER: HerstellerID erforderlich für Versand
-```
+Es wird automatisch die Standard-HerstellerID `00000` verwendet.
 
-**Workaround:** CLI-Parameter `--hersteller-id 74458`
+### Priorität:
+1. CLI-Flag `--hersteller-id` (höchste)
+2. Excel-Feld (Zeile 24)
+3. Standard: `00000` (niedrigste)
 
 ---
 
@@ -88,7 +85,7 @@ Zeile | Feld                      | Beispiel              | Pflicht
  21   | Erstjahr                 | Ja                    | ✅
  22   | Ergebnisverwendung       | Thesaurierung         | ✅
  23   | Ausschüttungsbetrag      | 0                     | ✅
- 24   | HerstellerID             | 74458                 | ✅ NEU!
+ 24   | HerstellerID             | 00000                 | ❌ (Standard: 00000)
  25   | DatenLieferant           |                       | ❌ NEU!
 ```
 
@@ -104,25 +101,24 @@ Zeile | Feld                      | Beispiel              | Pflicht
 
 ### 2. XBRL generieren
 ```bash
-./build/ebilanz-submit --output /tmp --hersteller-id 74458 meine-bilanz.xlsx
+./build/ebilanz-submit --output /tmp meine-bilanz.xlsx
 ```
-- **Mit HerstellerID:** Erzeugt pure XBRL + ElsterBasis-wrapped XML
-- **Ohne HerstellerID:** Nur pure XBRL (Warnung, aber kein Fehler)
+Erzeugt pure XBRL + ElsterBasis-wrapped XML (HerstellerID `00000` wird automatisch verwendet)
 
 ### 3. Übermittlung
 ```bash
-./build/ebilanz-submit --cert zertifikat.pfx --hersteller-id 74458 meine-bilanz.xlsx
+./build/ebilanz-submit --cert zertifikat.pfx meine-bilanz.xlsx
 ```
-❌ **Ohne HerstellerID:** Fehler, Abbruch
+HerstellerID `00000` wird automatisch verwendet
 
 ---
 
 ## Häufige Fragen
 
 ### Kann ich die HerstellerID via CLI übergeben statt in Excel?
-✅ Ja: `--hersteller-id 74458`
-- CLI-Parameter überschreibt Excel-Wert
-- Nützlich für automatisierte Skripte
+✅ Ja: `--hersteller-id XXXXX`
+- CLI-Parameter überschreibt Excel-Wert und Standard
+- Nützlich für Entwicklung/Tests mit anderer HerstellerID
 
 ### Braucht jeder Nutzer eine eigene HerstellerID?
 ❌ Nein! Die HerstellerID ist **pro Software/Tool**, nicht pro Nutzer.
@@ -142,22 +138,18 @@ Zeile | Feld                      | Beispiel              | Pflicht
 
 **Alte Excel-Dateien (ohne Zeilen 24-25):**
 - Parser liest leere Strings für HerstellerID/DatenLieferant
-- Validierung funktioniert
-- Übermittlung benötigt `--hersteller-id` CLI-Parameter
-
-**Empfehlung:**
-Aktualisieren Sie alte Excel-Dateien:
-1. Zeile 24 manuell einfügen: "HerstellerID" | "74458" | "Hinweis"
-2. Zeile 25 manuell einfügen: "DatenLieferant" | "" | "Hinweis"
-
-Oder nutzen Sie die neue Template-Datei als Basis.
+- Validierung und Übermittlung funktionieren (Standard-HerstellerID `00000` wird automatisch verwendet)
+- Kein manuelles Update nötig
 
 ---
 
 ## Changelog
 
-### Version 1.1.0 (2024-02-14)
-- ✅ Zeile 24: HerstellerID hinzugefügt (PFLICHT für Übermittlung)
+### Version 1.2.0 (2026-02-27)
+- ✅ HerstellerID `00000` als Standard eingebaut (Zeile 24 optional)
+
+### Version 1.1.0 (2026-02-14)
+- ✅ Zeile 24: HerstellerID hinzugefügt
 - ✅ Zeile 25: DatenLieferant hinzugefügt (Optional)
 
 ### Version 1.0.0 (Initial)

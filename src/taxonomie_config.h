@@ -16,6 +16,8 @@ struct TaxonomieConfig {
     std::string version;
     std::string namespaceUri;
     std::string schemaRef;
+    std::string gcdNamespace;
+    std::string gcdSchemaRef;
     std::string linkNamespace;
     std::string xlinkNamespace;
 

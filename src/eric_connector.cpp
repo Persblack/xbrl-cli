@@ -133,9 +133,9 @@ ValidationResult ERiCConnector::validate(const std::string& xbrlContent) {
         return result;
     }
 
-    // Validation flags - ERIC_PRUEFE_HINWEISE checks content without full schema validation
-    // Note: ERIC_VALIDIERE validates against Elster-Basis-Schema which doesn't support XBRL
-    uint32_t flags = ERIC_PRUEFE_HINWEISE;
+    // Validation flags - ERIC_VALIDIERE validates content
+    // Note: ERIC_PRUEFE_HINWEISE omitted to separate blocking errors from non-blocking Hinweise
+    uint32_t flags = ERIC_VALIDIERE;
 
     // No certificate needed for validation
     // Note: datenartVersion must match taxonomy version (e.g., "Bilanz_6_8" for taxonomie 6.8)
@@ -179,7 +179,14 @@ ValidationResult ERiCConnector::validate(const std::string& xbrlContent) {
         // Also log rueckgabe content for details
         const char* rueckgabeText = EricRueckgabepufferInhalt(rueckgabe);
         if (rueckgabeText && strlen(rueckgabeText) > 0) {
-            spdlog::debug("ERiC Rückgabe: {}", rueckgabeText);
+            spdlog::debug("ERiC Rückgabe: {} Bytes", strlen(rueckgabeText));
+            // Write full response to file (spdlog may truncate large messages)
+            std::ofstream errFile("eric-validation-errors.xml");
+            if (errFile.is_open()) {
+                errFile << rueckgabeText;
+                errFile.close();
+                spdlog::debug("ERiC Fehler gespeichert: eric-validation-errors.xml");
+            }
         }
     }
 

@@ -7,11 +7,12 @@
 // ── ElsterBasis Configuration ───────────────────────────────────────────────
 
 struct ElsterConfig {
-    std::string herstellerID;
+    std::string herstellerID = "00000";
     std::string datenLieferant;
-    std::string verfahren = "ElsterErklaerung";
+    std::string verfahren = "ElsterBilanz";
     std::string vorgang = "send-Auth";
     std::string elsterNamespace = "http://www.elster.de/elsterxml/schema/v11";
+    std::string ebilanzNamespace = "http://rzf.fin-nrw.de/RMS/EBilanz/2016/XMLSchema";
     int version = 11;
 };
 

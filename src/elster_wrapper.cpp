@@ -4,6 +4,7 @@
 #include <pugixml.hpp>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <chrono>
 #include <iomanip>
 #include <random>
@@ -127,10 +128,21 @@ std::string ElsterWrapper::wrap(const std::string& xbrlContent,
     empfaengerFA.append_attribute("id") = "F";
     empfaengerFA.text() = stamm.finanzamtsNummer.c_str();
 
-    // ── Nutzdaten (XBRL content) ──
+    // ── Nutzdaten (XBRL content wrapped in EBilanz envelope) ──
     auto nutzdaten = nutzdatenblock.append_child("Nutzdaten");
 
-    // Parse XBRL content and insert into Nutzdaten
+    // EBilanz wrapper element required by ERiC schema
+    auto ebilanz = nutzdaten.append_child("ebilanz:EBilanz");
+    ebilanz.append_attribute("xmlns:ebilanz") = config_.ebilanzNamespace.c_str();
+    ebilanz.append_attribute("version") = "1";
+
+    // Stichtag (balance sheet closing date) in YYYYMMDD format
+    std::string stichtag = stamm.bilanzstichtag;
+    // Remove dashes from ISO date (2024-12-31 -> 20241231)
+    stichtag.erase(std::remove(stichtag.begin(), stichtag.end(), '-'), stichtag.end());
+    ebilanz.append_child("ebilanz:stichtag").text() = stichtag.c_str();
+
+    // Parse XBRL content and insert into EBilanz
     pugi::xml_document xbrlDoc;
     pugi::xml_parse_result parseResult = xbrlDoc.load_string(xbrlContent.c_str());
 
@@ -141,8 +153,8 @@ std::string ElsterWrapper::wrap(const std::string& xbrlContent,
         throw std::runtime_error(error);
     }
 
-    // Copy XBRL root element into Nutzdaten
-    nutzdaten.append_copy(xbrlDoc.document_element());
+    // Copy XBRL root element into EBilanz (after stichtag)
+    ebilanz.append_copy(xbrlDoc.document_element());
 
     // Serialize to string
     std::ostringstream oss;
