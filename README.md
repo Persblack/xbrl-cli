@@ -8,17 +8,17 @@ Fill in an Excel template, run one command. `ebilanz-submit` validates your figu
 
 ## Why this exists
 
-**The E-Bilanz is mandatory — and there is no free, automated way to file it.**
+**The E-Bilanz can only be filed through software — and all of it costs money.**
 
-Since 2013 (§5b EStG), every German company that prepares a balance sheet — every GmbH, and most other businesses that aren't small enough for simple cash-basis accounting — must transmit its balance sheet and profit-and-loss statement to the tax office electronically, in XBRL format. There is no opting out.
+Since 2013 (§5b EStG), every German company that prepares a balance sheet — every GmbH, and most other businesses — must transmit its balance sheet and profit-and-loss statement to the tax office electronically, in XBRL format. There is no opting out.
 
-But the tooling around this obligation leaves small companies stranded:
+And there is no manual way to do it. Unlike an income-tax return, the E-Bilanz **cannot** be typed into a free ELSTER web form — it can only be transmitted through software that speaks the official ERiC interface. ERiC itself is free, but until now every application built on top of it has been commercial:
 
-- **The free official route is manual labour.** ELSTER's web form means re-typing every balance-sheet line by hand — no import, no real validation, no repeatability year to year.
-- **Everything that automates it is commercial,** and priced for tax advisors rather than founders. Licenses run into the hundreds of euros per year, and most packages are bloated with features a one-person GmbH will never touch.
-- **So small companies pay anyway** — for software they barely use, or for a Steuerberater to click through a form on their behalf. Hundreds of euros every year, for a filing that happens once a year.
+- **Priced for tax advisors, not founders.** Licenses run into the hundreds of euros per year.
+- **Overblown for a small company.** Most packages are bloated with features a one-person GmbH will never touch.
+- **So you must pay just to comply.** To meet a legal obligation, a small company either buys software it barely uses, or hands the job — and a few hundred euros — to its Steuerberater, every single year.
 
-`ebilanz-submit` closes that gap. It gives a small, owner-run company a way to produce and submit its own legally-required E-Bilanz from a simple spreadsheet — for free, on its own machine, with the data never leaving the building.
+A legal requirement should not be paywalled. `ebilanz-submit` is the missing free path: it drives the same official, free ERiC interface from a simple Excel template, on your own machine — so a small, owner-run company can file its own E-Bilanz without paying anyone, and without its financial data ever leaving the building.
 
 > **Scope:** GmbH (§266 Abs. 1 HGB), balance sheet + P&L (Gesamtkostenverfahren). No cash-flow statement, notes, or management report — deliberately focused on the simple balance sheets of small companies. Contributions extending the scope are welcome.
 
