@@ -57,7 +57,7 @@ TEST_CASE("ERiCConnector: Validierung mit ElsterBasis", "[eric][integration]") {
 
         // Wrap in ElsterBasis envelope (what ERiC actually expects)
         ElsterConfig config;
-        config.herstellerID = "00000";
+        config.herstellerID = "12345";
         ElsterWrapper wrapper(config);
 
         Stammdaten stamm;

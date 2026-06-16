@@ -163,14 +163,11 @@ TEST_CASE("XBRLGenerator: Contexts vorhanden") {
         REQUIRE(xbrl.find("id=\"current_instant\"") != std::string::npos);
     }
 
-    SECTION("Prior duration context") {
-        REQUIRE(xbrl.find("id=\"prior\"") != std::string::npos);
-        REQUIRE(xbrl.find("2023-01-01") != std::string::npos);
-        REQUIRE(xbrl.find("2023-12-31") != std::string::npos);
-    }
-
-    SECTION("Prior instant context") {
-        REQUIRE(xbrl.find("id=\"prior_instant\"") != std::string::npos);
+    // HAOE/Einheitsbilanz: prior-period contexts are intentionally NOT emitted.
+    // ERiC rejects them ("keine Handelsbilanz vor", 170205105). See xbrl_generator.cpp.
+    SECTION("No prior contexts (HAOE)") {
+        REQUIRE(xbrl.find("id=\"prior\"") == std::string::npos);
+        REQUIRE(xbrl.find("id=\"prior_instant\"") == std::string::npos);
     }
 }
 
@@ -219,8 +216,10 @@ TEST_CASE("XBRLGenerator: Bilanzpositionen") {
         REQUIRE(xbrl.find("20000.00") != std::string::npos);
     }
 
-    SECTION("Prior year values present") {
-        REQUIRE(xbrl.find("contextRef=\"prior_instant\"") != std::string::npos);
+    // HAOE/Einheitsbilanz: no prior-period facts/contexts are emitted (ERiC 170205105).
+    SECTION("No prior-context references (HAOE)") {
+        REQUIRE(xbrl.find("contextRef=\"prior_instant\"") == std::string::npos);
+        REQUIRE(xbrl.find("contextRef=\"prior\"") == std::string::npos);
     }
 
     SECTION("Bilanz positions use instant context") {
@@ -248,7 +247,7 @@ TEST_CASE("XBRLGenerator: GuV-Positionen") {
     }
 }
 
-TEST_CASE("XBRLGenerator: Erstjahr — Prior Context vorhanden") {
+TEST_CASE("XBRLGenerator: Erstjahr — keine Prior Contexts (HAOE)") {
     auto config = createTestConfig();
     XBRLGenerator generator(config);
 
@@ -265,9 +264,10 @@ TEST_CASE("XBRLGenerator: Erstjahr — Prior Context vorhanden") {
 
     std::string xbrl = generator.generate(stamm, bilanz, guv);
 
-    // Prior context MUST still be present even for Erstjahr
-    REQUIRE(xbrl.find("id=\"prior\"") != std::string::npos);
-    REQUIRE(xbrl.find("id=\"prior_instant\"") != std::string::npos);
+    // HAOE/Einheitsbilanz: no prior-period contexts are emitted, also for Erstjahr.
+    // ERiC rejects prior contexts ("keine Handelsbilanz vor", 170205105).
+    REQUIRE(xbrl.find("id=\"prior\"") == std::string::npos);
+    REQUIRE(xbrl.find("id=\"prior_instant\"") == std::string::npos);
 }
 
 TEST_CASE("XBRLGenerator: Auffangpositionen") {

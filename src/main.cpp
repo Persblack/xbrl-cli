@@ -109,7 +109,9 @@ int main(int argc, char* argv[]) {
     std::string certPassword;
     app.add_option("-c,--cert", certFile, "ELSTER-Zertifikat (.pfx)")
         ->check(CLI::ExistingFile);
-    app.add_option("-p,--password", certPassword, "Zertifikat-Passwort (sonst interaktiv)");
+    app.add_option("-p,--password", certPassword,
+                   "Zertifikat-Passwort (WARNUNG: auf der Kommandozeile sichtbar in "
+                   "Prozessliste/Shell-History — bevorzugt interaktive Eingabe verwenden)");
 
     // Output
     std::string outputDir;
@@ -122,7 +124,8 @@ int main(int argc, char* argv[]) {
 
     // HerstellerID
     std::string herstellerID;
-    app.add_option("--hersteller-id", herstellerID, "ELSTER HerstellerID (Standard: 00000)");
+    app.add_option("--hersteller-id", herstellerID,
+                   "ELSTER HerstellerID (Pflicht für Übermittlung; alternativ Excel-Feld B24)");
 
     // Logging
     bool verbose = false;
@@ -309,7 +312,7 @@ int main(int argc, char* argv[]) {
             // ── Wrap XBRL in ElsterBasis envelope for ERiC submission ──
             if (!validateOnly && !outputOnly) {
                 ElsterConfig elsterConfig;
-                // Priority: CLI flag > Excel field > default (00000)
+                // Priority: CLI flag > Excel field (B24); no built-in default — required
                 if (!herstellerID.empty()) {
                     elsterConfig.herstellerID = herstellerID;
                 } else if (!stamm.herstellerID.empty()) {

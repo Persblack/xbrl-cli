@@ -62,6 +62,9 @@ ERiCConnector::~ERiCConnector() {
         EricBeende();
         spdlog::debug("ERiC beendet");
     }
+    // SECURITY: scrub the stored certificate password from memory on teardown,
+    // even if submit() was never reached (e.g. an exception after loadCertificate).
+    secureZero(certPassword_);
 #endif
 }
 

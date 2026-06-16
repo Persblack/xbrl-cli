@@ -172,7 +172,7 @@ void createTemplate(const std::string& path) {
     auto ws = wb.active_sheet();
     ws.title("Stammdaten");
 
-    // Labels in column A, values in column B (pre-filled from bilanz-2024.xlsx)
+    // Labels in column A, values in column B (fictional example data — replace with your own)
     ws.cell("A1").value("Feld");
     ws.cell("B1").value("Wert");
     ws.cell("A2").value("Steuernummer (vereinfacht)");
@@ -196,7 +196,7 @@ void createTemplate(const std::string& path) {
     ws.cell("A11").value("Handelsregister-Nr.");
     ws.cell("B11").value("HRB 12345");
     ws.cell("A12").value("Registergericht");
-    ws.cell("B12").value("Ulm");
+    ws.cell("B12").value("Amtsgericht Musterstadt");
     ws.cell("A13").value("Wirtschaftsjahr von");
     ws.cell("B13").value("01.01.2024");
     ws.cell("A14").value("Wirtschaftsjahr bis");
@@ -219,6 +219,10 @@ void createTemplate(const std::string& path) {
     ws.cell("B22").value("Thesaurierung");
     ws.cell("A23").value("Ausschüttungsbetrag");
     ws.cell("B23").value(0.0);
+    ws.cell("A24").value("HerstellerID");
+    ws.cell("B24").value("");  // ELSTER HerstellerID — required for submission, leave empty in template
+    ws.cell("A25").value("DatenLieferant");
+    ws.cell("B25").value("");  // optional override (defaults to Firmenname)
 
     // ── Bilanz ──
     // Labels aligned with data rows from excel_parser.cpp:

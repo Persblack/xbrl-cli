@@ -61,7 +61,7 @@ Nutze `templates/ebilanz-template.xlsx`:
 | **Info** | Hilfe & Anleitung |
 
 **Hinweis:**
-- **HerstellerID** ist bereits eingebaut (`00000`). In Excel (Zeile 24) oder via `--hersteller-id` nur zum Überschreiben.
+- **HerstellerID** (Zeile 24): **Pflicht** für die Übermittlung. Jeder Hersteller benötigt eine eigene, bei ELSTER registrierte HerstellerID — siehe Abschnitt „HerstellerID & DatenLieferant". Alternativ via `--hersteller-id`.
 - **DatenLieferant** (Zeile 25): Optional, falls abweichend vom Firmennamen
 
 ### 4. Daten validieren
@@ -99,15 +99,17 @@ Erzeugt:
 
 ## HerstellerID & DatenLieferant
 
-### HerstellerID (eingebaut)
+### HerstellerID (Pflicht)
 
-Die offizielle HerstellerID `00000` (Produkt: „xbrl-cli") ist bereits im Tool hinterlegt. Sie müssen nichts konfigurieren.
+Die HerstellerID identifiziert die übermittelnde Software gegenüber ELSTER. **Es ist keine HerstellerID eingebaut** — jeder Nutzer/Hersteller muss seine eigene, bei ELSTER registrierte HerstellerID verwenden. Ohne HerstellerID bricht die Übermittlung mit einem Fehler ab.
 
-**Override (nur für Entwicklung/Tests):**
+HerstellerID beantragen: https://www.elster.de/elsterweb/entwickler
+
+**Setzen:**
 - **Via CLI:** `--hersteller-id XXXXX`
 - **Via Excel:** Eintragen in Stammdaten Zeile 24
 
-Priorität: CLI-Flag > Excel-Feld > Standard (`00000`)
+Priorität: CLI-Flag > Excel-Feld (B24)
 
 ### DatenLieferant (Optional)
 
@@ -151,8 +153,8 @@ ebilanz-submit [OPTIONEN] <bilanz.xlsx>
 | Option | Beschreibung |
 |--------|-------------|
 | `-c, --cert <file>` | ELSTER-Zertifikat (.pfx) |
-| `-p, --password <pw>` | Zertifikat-Passwort (sonst interaktiv) |
-| `--hersteller-id <id>` | ELSTER HerstellerID (Standard: 00000) |
+| `-p, --password <pw>` | Zertifikat-Passwort (⚠️ sichtbar in Prozessliste/History — sonst interaktiv) |
+| `--hersteller-id <id>` | ELSTER HerstellerID (Pflicht; alternativ Excel-Feld B24) |
 
 ### Logging
 

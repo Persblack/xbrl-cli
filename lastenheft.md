@@ -5,7 +5,7 @@
 **Projektname:** E-Bilanz Excel Submitter  
 **Version:** 1.1  
 **Datum:** Februar 2026  
-**Auftraggeber:** Rico (Muster GmbH)
+**Auftraggeber:** Solo-GmbH-Unternehmer
 
 ### 1.1 Ausgangssituation
 GmbHs in Deutschland müssen ihre Bilanz elektronisch im XBRL-Format über die ERiC-Schnittstelle ans Finanzamt übermitteln (E-Bilanz-Pflicht). Professionelle Software ist teuer und überdimensioniert für kleine GmbHs mit einfachen Bilanzen.
@@ -65,7 +65,7 @@ Entwicklung eines **C++ Command-Line-Tools**, das:
 | Steuernummer (vereinfacht)    | B2    | 12/345/67890              | Ja      | Landesformat XX/XXX/XXXXX         |
 | Steuernummer (bundeseinheitl.)| B3    | 5123045067890             | Auto    | 13-stellig, wird aus B2+B4 berechnet |
 | Finanzamts-Nummer (BuFa-Nr.) | B4    | 2893                      | Ja      | 4-stellig, ELSTER-Verzeichnis     |
-| Firmenname                    | B5    | Muster GmbH           | Ja      |                                   |
+| Firmenname                    | B5    | Muster GmbH               | Ja      |                                   |
 | Rechtsform                    | B6    | GmbH (fest)               | Ja      | Dropdown, nur "GmbH"             |
 | Straße + Hausnummer           | B7    | Musterstraße 123          | Ja      |                                   |
 | PLZ                           | B8    | 12345                     | Ja      | 5 Stellen                        |

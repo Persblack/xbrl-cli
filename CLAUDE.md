@@ -274,8 +274,11 @@ Das ERiC-SDK ist schlecht dokumentiert. Wichtige Hinweise:
 Jede XBRL-Datei braucht mindestens diese Contexts:
 - `current` (duration): Wirtschaftsjahr-Zeitraum für GuV
 - `current_instant`: Bilanzstichtag für Bilanzpositionen
-- `prior` (duration): Vorjahres-Zeitraum (auch bei Erstjahr!)
-- `prior_instant`: Vorjahres-Stichtag (auch bei Erstjahr!)
+
+**Keine Prior-Contexts (HAOE/Einheitsbilanz):** ERiC weist Vorjahres-Contexts für die
+HAOE-Einheitsbilanz ab („keine Handelsbilanz vor", Fehlercode 170205105). Daher werden
+`prior`/`prior_instant` bewusst NICHT erzeugt — auch nicht im Erstjahr. Siehe
+`xbrl_generator.cpp`.
 
 ### Identifier
 Der Entity-Identifier ist die **bundeseinheitliche 13-stellige Steuernummer** (nicht das vereinfachte Format). Schema: `http://www.rzf-nrw.de/Steuernummer`

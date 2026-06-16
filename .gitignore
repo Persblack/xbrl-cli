@@ -1,5 +1,8 @@
 # Build artifacts
 build/
+build-*/
+/output/
+/Testing/
 *.o
 *.a
 *.dylib
@@ -21,13 +24,28 @@ build/
 *.log
 logs/
 
-# Test data (generated)
+# Test data (generated) and user balance sheets — never commit real financial data
 tests/testdata/*.xlsx
 templates/*.xlsx
 *.xlsx
 *.pdf
+# ...except the shipped example template (fictional data only)
+!templates/ebilanz-template.xlsx
 
 taxonomy-v6.8
+
+# HGB taxonomy (large, download separately from xbrl.de)
+taxonomy-v6.8/
+
+# ELSTER official schema documentation (download from elster.de; not redistributed)
+elster-doc/
+
+# ERiC validation error dumps (may contain financial data)
+eric-validation-errors.xml
+
+# Local-only editor/agent config and scratch files
+GEMINI.md
+Untitled
 
 # ERiC SDK (proprietary - not included in repo)
 external/eric-sdk/lib/

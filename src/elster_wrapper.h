@@ -7,7 +7,7 @@
 // ── ElsterBasis Configuration ───────────────────────────────────────────────
 
 struct ElsterConfig {
-    std::string herstellerID = "00000";
+    std::string herstellerID;  // ELSTER HerstellerID — must be set per user (CLI flag or Excel B24)
     std::string datenLieferant;
     std::string verfahren = "ElsterBilanz";
     std::string vorgang = "send-Auth";

@@ -29,8 +29,14 @@ double readDouble(xlnt::worksheet& ws, const std::string& cellRef) {
             try {
                 std::string str = cell.to_string();
                 if (str.empty()) return 0.0;
-                // Handle German number format (comma as decimal separator)
-                std::replace(str.begin(), str.end(), ',', '.');
+                // Handle German number format: '.' = thousands separator, ',' = decimal.
+                // Only strip '.' when a ',' decimal is also present, otherwise keep a lone
+                // '.' as the decimal point (e.g. "1234.56"). Avoids turning "1.234,56" into
+                // "1.234" by dropping the thousands separator.
+                if (str.find(',') != std::string::npos) {
+                    str.erase(std::remove(str.begin(), str.end(), '.'), str.end());
+                    std::replace(str.begin(), str.end(), ',', '.');
+                }
                 return std::stod(str);
             } catch (...) {
                 return 0.0;
