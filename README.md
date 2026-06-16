@@ -1,8 +1,26 @@
-# E-Bilanz CLI Tool
+# ebilanz-submit
 
-**Elektronische Bilanzübermittlung** ans deutsche Finanzamt — Ein C++17 CLI-Tool für Solo-GmbHs.
+**A free, open-source command-line tool to file your German E-Bilanz — the electronic balance sheet that every German company is legally required to submit to the tax office.**
 
-Liest Bilanzdaten aus Excel, generiert HGB-konforme XBRL-Dateien und übermittelt diese über das ERiC-SDK (ELSTER) ans Finanzamt.
+Fill in an Excel template, run one command. `ebilanz-submit` validates your figures, generates an HGB-compliant XBRL document, and transmits it to the Finanzamt through the official ERiC (ELSTER) interface. Local, free, open source — no cloud, no subscription, no telemetry.
+
+---
+
+## Why this exists
+
+**The E-Bilanz is mandatory — and there is no free, automated way to file it.**
+
+Since 2013 (§5b EStG), every German company that prepares a balance sheet — every GmbH, and most other businesses that aren't small enough for simple cash-basis accounting — must transmit its balance sheet and profit-and-loss statement to the tax office electronically, in XBRL format. There is no opting out.
+
+But the tooling around this obligation leaves small companies stranded:
+
+- **The free official route is manual labour.** ELSTER's web form means re-typing every balance-sheet line by hand — no import, no real validation, no repeatability year to year.
+- **Everything that automates it is commercial,** and priced for tax advisors rather than founders. Licenses run into the hundreds of euros per year, and most packages are bloated with features a one-person GmbH will never touch.
+- **So small companies pay anyway** — for software they barely use, or for a Steuerberater to click through a form on their behalf. Hundreds of euros every year, for a filing that happens once a year.
+
+`ebilanz-submit` closes that gap. It gives a small, owner-run company a way to produce and submit its own legally-required E-Bilanz from a simple spreadsheet — for free, on its own machine, with the data never leaving the building.
+
+> **Scope:** GmbH (§266 Abs. 1 HGB), balance sheet + P&L (Gesamtkostenverfahren). No cash-flow statement, notes, or management report — deliberately focused on the simple balance sheets of small companies. Contributions extending the scope are welcome.
 
 ---
 
@@ -340,6 +358,21 @@ ctest --output-on-failure
 ### "Stammkapital < 25.000 EUR"
 → Dieses Tool ist nur für GmbH (nicht UG)
 → GmbH benötigt mindestens 25.000 € Stammkapital
+
+---
+
+## Contributing
+
+Contributions are very welcome — this tool exists to save small companies money, and every improvement compounds across everyone who uses it. Good places to start:
+
+- **Broaden the scope:** UG (haftungsbeschränkt) and other legal forms, or balance-sheet positions not yet mapped.
+- **Annual taxonomy updates:** the HGB taxonomy changes most years; the mapping is data, not code — see `config/taxonomie-6.8.json`.
+- **Cross-platform:** Windows/Linux build and packaging (the core is portable C++17; only password entry and the ERiC setup are platform-specific).
+- **Tests** for new validation rules or taxonomy positions.
+
+Please open an issue to discuss anything non-trivial first, and run `ctest` before opening a PR. Codebase conventions and architecture live in [`CLAUDE.md`](CLAUDE.md).
+
+> **Disclaimer:** This tool does not constitute tax advice. You are responsible for the correctness of the data you submit. When in doubt, consult a Steuerberater.
 
 ---
 
