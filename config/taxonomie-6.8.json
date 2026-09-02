@@ -101,7 +101,7 @@
     "guv_personal_loehne": "de-gaap-ci:is.netIncome.regular.operatingTC.staff.salaries",
     "guv_personal_sozial": "de-gaap-ci:is.netIncome.regular.operatingTC.staff.social",
     "guv_personal_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.staff",
-    "guv_abschreibungen_immateriell_sach": "de-gaap-ci:is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.lowValueAs",
+    "guv_abschreibungen_immateriell_sach": "de-gaap-ci:is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.other",
     "guv_abschreibungen_umlauf": "de-gaap-ci:is.netIncome.regular.operatingTC.deprAmort.currAss",
     "guv_abschreibungen_summe": "de-gaap-ci:is.netIncome.regular.operatingTC.deprAmort",
     "guv_sonstige_aufwendungen": "de-gaap-ci:is.netIncome.regular.operatingTC.otherCost.miscellaneous",

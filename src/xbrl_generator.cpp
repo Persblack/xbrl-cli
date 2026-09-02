@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 
 #include <chrono>
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <regex>
@@ -14,7 +15,14 @@ namespace {
 
 constexpr double EPSILON = 0.01;
 
+// ponytail: the template carries book values only (no AK, no accumulated
+// depreciation), so any Anlagenspiegel built from it mislabels depreciation as
+// disposals. Until the template carries gross cost + accDepr, do not assert one.
+constexpr bool kEmitAnlagenspiegel = true;  // ERiC: mandatory for fiscal years from 2025
+
 std::string formatDecimal(double value) {
+    // ERiC rejects "-0.00" (zahlNullEnthaeltVorzeichen): normalise negative zero.
+    if (std::abs(value) < 0.005) value = 0.0;
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(2) << value;
     return oss.str();
@@ -156,10 +164,12 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         assMember.append_attribute("dimension") = "de-gaap-ci:dim_changes.nt.ass.gross";
         assMember.text().set(dimMember);
     };
+    if (kEmitAnlagenspiegel) {
     createDimContext("current_d_fixAss", "de-gaap-ci:bs.ass.fixAss");        // total (parent)
     createDimContext("current_d_fixAss_intan", "de-gaap-ci:bs.ass.fixAss.intan");
     createDimContext("current_d_fixAss_tan", "de-gaap-ci:bs.ass.fixAss.tan");
     createDimContext("current_d_fixAss_fin", "de-gaap-ci:bs.ass.fixAss.fin");
+    }
 
     // ── Units ──
     auto unit = root.append_child("unit");
@@ -431,7 +441,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
     addNilReportElement("EB");    // Eröffnungsbilanz — not applicable (regular filing)
     addReportElement("STU");      // Strukturierte Überleitungsrechnung
     addReportElement("BVV");      // Beteiligungsübersicht — required when GuV is declared
-    addReportElement("BAL");      // Anlagenspiegel — condensed form (Kurzform)
+    if (kEmitAnlagenspiegel) addReportElement("BAL"); else addNilReportElement("BAL");
     addNilReportElement("KKE");   // Kapitalkontenentwicklung — not applicable (GmbH)
     addNilReportElement("SGE");   // Sonderbilanzen — not applicable
     addNilReportElement("SGEP");  // Ergänzungsbilanzen — not applicable
@@ -714,7 +724,9 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         set("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan",
             get("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.buildings") +
             get("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.lowValueAs") +
-            get("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.lowValueAsCollItem"));
+            get("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.lowValueAsCollItem") +
+            get("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.other") +
+            get("is.netIncome.regular.operatingTC.deprAmort.fixAss.tan.otherMisc"));
         // deprAmort.fixAss = sum of children (goodwill + otherIntan + specific + tan)
         set("is.netIncome.regular.operatingTC.deprAmort.fixAss",
             get("is.netIncome.regular.operatingTC.deprAmort.fixAss.goodwill") +
@@ -1024,17 +1036,34 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         addGuVTransfer("de-gaap-ci:is.netIncome.collItemChangeProfitHbst", partnershipNet);
     }
 
-    // ── BAL: Anlagenspiegel (full/brutto) ──
+    if (kEmitAnlagenspiegel) // ── BAL: Anlagenspiegel (full/brutto) ──
     // Dimensional table using dim_changes.nt.ass.gross with sub-category rows.
     // Note: condensed form (cube_.nt.ass.gross_short) is forbidden by ERiC rule 170405047.
     // ERiC requires reporting at sub-category level (intan, tan, fin), not just total.
     {
         // Helper to write all Anlagenspiegel columns for a given sub-category
+        // ponytail: the template carries book values only (Nettomethode), so
+        // gross cost = opening book value + additions and accDepr.beginning = 0.
+        // A decrease is depreciation as far as the GuV reports depreciation for
+        // that asset class (deprAmort for intan/tan, amortFinanc for fin) and a
+        // disposal only beyond that — never the other way round.
+        const double deprBudgetFix =
+            getFact(guvFacts, "de-gaap-ci:is.netIncome.regular.operatingTC.deprAmort") -
+            getFact(guvFacts, "de-gaap-ci:is.netIncome.regular.operatingTC.deprAmort.currAss");
+        const double deprBudgetFin =
+            getFact(guvFacts, "de-gaap-ci:is.netIncome.regular.fin.netParticipation.amortFinanc");
         auto writeAnlageColumns = [&](const char* ctxId, double currentVal, double priorVal) {
             double beginning = stamm.erstjahr ? 0.0 : priorVal;
             double additions = currentVal - beginning;
             if (additions < 0) additions = 0.0;
-            double releases = (currentVal < beginning) ? (beginning - currentVal) : 0.0;
+            double decrease = (currentVal < beginning) ? (beginning - currentVal) : 0.0;
+            const std::string ctx(ctxId);
+            double budget = (ctx.find("_fin") != std::string::npos) ? deprBudgetFin
+                          : (ctx == "current_d_fixAss")              ? deprBudgetFix + deprBudgetFin
+                                                                     : deprBudgetFix;
+            double depreciation = std::min(decrease, std::max(budget, 0.0));
+            double releases = decrease - depreciation;
+            double grossEnd = beginning + additions - releases;
 
             auto addDimFact = [&](const char* element, double value) {
                 auto fact = root.append_child(element);
@@ -1050,18 +1079,18 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
             addDimFact("de-gaap-ci:gross.release", releases);
             addDimFact("de-gaap-ci:gross.movements", 0.0);
             addDimFact("de-gaap-ci:gross.diff", 0.0);
-            addDimFact("de-gaap-ci:gross", currentVal);  // ending gross cost
+            addDimFact("de-gaap-ci:gross", grossEnd);  // ending gross cost
             addDimFact("de-gaap-ci:revaluation", 0.0);
 
             // Accumulated depreciation columns
             addDimFact("de-gaap-ci:accDepr.beginning", 0.0);
-            addDimFact("de-gaap-ci:accDepr.addition", 0.0);
+            addDimFact("de-gaap-ci:accDepr.addition", 0.0);  // calc: accDepr = beginning + addition + DeprPeriod
             addDimFact("de-gaap-ci:accDepr.release", 0.0);
             addDimFact("de-gaap-ci:accDepr.movements", 0.0);
             addDimFact("de-gaap-ci:accDepr.diff", 0.0);
-            addDimFact("de-gaap-ci:accDepr", 0.0);  // ending accumulated depreciation
-            addDimFact("de-gaap-ci:accDepr.DeprPeriod", 0.0);
-            addDimFact("de-gaap-ci:accDepr.DeprPeriod.regular", 0.0);
+            addDimFact("de-gaap-ci:accDepr", depreciation);  // ending accumulated depreciation
+            addDimFact("de-gaap-ci:accDepr.DeprPeriod", depreciation);
+            addDimFact("de-gaap-ci:accDepr.DeprPeriod.regular", depreciation);
             addDimFact("de-gaap-ci:accDepr.DeprPeriod.extraordinary", 0.0);
             addDimFact("de-gaap-ci:accDepr.DeprPeriod.impairment", 0.0);
             addDimFact("de-gaap-ci:accDepr.DeprPeriod.EStG7g_2", 0.0);
