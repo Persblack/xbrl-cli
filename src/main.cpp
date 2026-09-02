@@ -12,10 +12,15 @@
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#ifndef _WIN32
+#include <sys/stat.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -43,28 +48,38 @@ void printFail() {
 // ── Transfer History ────────────────────────────────────────────────────────
 
 void saveTransferHistory(const TransferHistoryEntry& entry) {
-    std::string homeDir;
-#ifdef _WIN32
-    homeDir = std::getenv("USERPROFILE") ? std::getenv("USERPROFILE") : ".";
-#else
-    homeDir = std::getenv("HOME") ? std::getenv("HOME") : ".";
-#endif
-    fs::path histDir = fs::path(homeDir) / ".ebilanz";
+    fs::path histDir = fs::path(userHomeDir()) / ".ebilanz";
     fs::path histFile = histDir / "history.json";
 
     // Create directory if needed
     fs::create_directories(histDir);
 
-    // Load existing history
-    nlohmann::json history;
+    // Load existing history; a corrupt file is moved aside, never overwritten
+    nlohmann::json history = nlohmann::json::object();
     if (fs::exists(histFile)) {
-        std::ifstream in(histFile);
-        if (in.is_open()) {
-            try {
-                in >> history;
-            } catch (...) {
-                history = nlohmann::json::object();
+        bool corrupt = false;
+        {
+            std::ifstream in(histFile);
+            if (in.is_open()) {
+                try {
+                    in >> history;
+                } catch (...) {
+                    corrupt = true;
+                }
             }
+        }
+        if (!corrupt && !history.is_object()) {
+            corrupt = true;
+        }
+        if (corrupt) {
+            fs::path backup = histFile;
+            backup += ".corrupt-" + std::to_string(std::time(nullptr));
+            std::error_code ec;
+            fs::rename(histFile, backup, ec);
+            spdlog::warn("Transfer-Historie {} ist beschädigt — verschoben nach {}{}",
+                         histFile.string(), backup.string(),
+                         ec ? " (Verschieben fehlgeschlagen: " + ec.message() + ")" : "");
+            history = nlohmann::json::object();
         }
     }
 
@@ -82,14 +97,33 @@ void saveTransferHistory(const TransferHistoryEntry& entry) {
     e["xbrlFile"] = entry.xbrlFile;
     history["transfers"].push_back(e);
 
-    // Save
-    std::ofstream out(histFile);
-    out << history.dump(2);
+    // Save: write to .tmp, then rename over the original (no half-written history)
+    fs::path tmpFile = histFile;
+    tmpFile += ".tmp";
+    {
+        std::ofstream out(tmpFile);
+        out << history.dump(2);
+        out.close();
+        if (!out) {
+            spdlog::error("FEHLER: konnte {} nicht schreiben", tmpFile.string());
+            return;
+        }
+    }
+    std::error_code ec;
+    fs::rename(tmpFile, histFile, ec);
+    if (ec) {
+        spdlog::error("FEHLER: konnte {} nicht schreiben: {}", histFile.string(), ec.message());
+    }
 }
 
 // ── Main Pipeline ───────────────────────────────────────────────────────────
 
 int main(int argc, char* argv[]) {
+#ifndef _WIN32
+    // SECURITY: every file we create (XBRL, logs, history) is owner-only
+    umask(077);
+#endif
+
     CLI::App app{"E-Bilanz Submitter — Elektronische Bilanzübermittlung ans Finanzamt"};
     app.get_formatter()->column_width(35);
 
@@ -110,8 +144,10 @@ int main(int argc, char* argv[]) {
     app.add_option("-c,--cert", certFile, "ELSTER-Zertifikat (.pfx)")
         ->check(CLI::ExistingFile);
     app.add_option("-p,--password", certPassword,
-                   "Zertifikat-Passwort (WARNUNG: auf der Kommandozeile sichtbar in "
-                   "Prozessliste/Shell-History — bevorzugt interaktive Eingabe verwenden)");
+                   "Zertifikat-Passwort. Bevorzugt über die Umgebungsvariable "
+                   "EBILANZ_CERT_PASSWORD oder interaktiv eingeben (WARNUNG: auf der "
+                   "Kommandozeile landet es in Shell-History und Prozessliste)")
+        ->envname("EBILANZ_CERT_PASSWORD");
 
     // Output
     std::string outputDir;
@@ -146,8 +182,27 @@ int main(int argc, char* argv[]) {
 
     CLI11_PARSE(app, argc, argv);
 
+    // SECURITY: if the password came via argv, overwrite those argv bytes so it
+    // no longer shows up in `ps` (env-var/interactive input leaves argv untouched).
+    if (!certPassword.empty()) {
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == certPassword || arg == "--password=" + certPassword || arg == "-p" + certPassword) {
+                volatile char* p = argv[i];
+                for (size_t j = 0; j < arg.size(); ++j) {
+                    p[j] = 0;
+                }
+            }
+        }
+    }
+
     // Setup logger
-    setupLogger(logFile, verbose, quiet);
+    try {
+        setupLogger(logFile, verbose, quiet);
+    } catch (const std::exception& ex) {
+        std::cerr << "FEHLER: Log-Datei " << logFile << " konnte nicht angelegt werden: " << ex.what() << "\n";
+        return static_cast<int>(ErrorCode::CONFIG_LOAD_FAILED);
+    }
     spdlog::info("E-Bilanz Submitter v{} gestartet", VERSION);
 
     if (!quiet) {
@@ -271,6 +326,11 @@ int main(int argc, char* argv[]) {
                 fs::path outPath = fs::path(outputDir) / ("ebilanz-" + year + ".xbrl");
                 std::ofstream out(outPath);
                 out << xbrlContent;
+                out.close();
+                if (!out) {
+                    std::cerr << "FEHLER: konnte " << outPath.string() << " nicht schreiben\n";
+                    return static_cast<int>(ErrorCode::XBRL_GENERATION_FAILED);
+                }
                 spdlog::info("XBRL gespeichert: {}", outPath.string());
                 if (!quiet) {
                     std::cout << "XBRL gespeichert: " << outPath.string() << "\n";
@@ -292,6 +352,11 @@ int main(int argc, char* argv[]) {
                     fs::path wrappedPath = fs::path(outputDir) / ("ebilanz-" + year + "-elster.xml");
                     std::ofstream wrappedOut(wrappedPath);
                     wrappedOut << wrappedXml;
+                    wrappedOut.close();
+                    if (!wrappedOut) {
+                        std::cerr << "FEHLER: konnte " << wrappedPath.string() << " nicht schreiben\n";
+                        return static_cast<int>(ErrorCode::XBRL_GENERATION_FAILED);
+                    }
                     spdlog::info("ElsterBasis XML gespeichert: {}", wrappedPath.string());
                     if (!quiet) {
                         std::cout << "ElsterBasis XML gespeichert: " << wrappedPath.string() << "\n";
@@ -329,6 +394,11 @@ int main(int argc, char* argv[]) {
                     fs::path wrappedPath = fs::path(outputDir) / ("ebilanz-" + year + "-elster.xml");
                     std::ofstream wrappedOut(wrappedPath);
                     wrappedOut << xbrlContent;
+                    wrappedOut.close();
+                    if (!wrappedOut) {
+                        std::cerr << "FEHLER: konnte " << wrappedPath.string() << " nicht schreiben\n";
+                        return static_cast<int>(ErrorCode::XBRL_GENERATION_FAILED);
+                    }
                     spdlog::info("ElsterBasis XML gespeichert: {}", wrappedPath.string());
                     if (!quiet) {
                         std::cout << "ElsterBasis XML gespeichert: " << wrappedPath.string() << "\n";
@@ -352,7 +422,10 @@ int main(int argc, char* argv[]) {
                 std::cout << "\nHinweis: ERiC-SDK nicht installiert. XBRL-Datei wurde generiert.\n";
                 std::cout << "Installieren Sie das ERiC-SDK für den Versand ans Finanzamt.\n";
             }
-            return static_cast<int>(ErrorCode::SUCCESS);
+            // Reaching this point means an ERiC step was requested (direct-XBRL mode always
+            // needs ERiC; a cert or a non-validate run means submit). Skipping it is a failure.
+            bool ericRequested = directXbrl || !certFile.empty() || !validateOnly;
+            return static_cast<int>(ericRequested ? ErrorCode::ERIC_INIT_FAILED : ErrorCode::SUCCESS);
         }
 
         // Load certificate
@@ -382,6 +455,23 @@ int main(int argc, char* argv[]) {
             return static_cast<int>(ErrorCode::ERIC_VALIDATION_FAILED);
         } else {
             if (!quiet) printOk();
+        }
+
+        // --validate never submits. Excel mode returned earlier; this is the direct-XBRL path.
+        if (validateOnly) {
+            if (!quiet) {
+                std::cout << "\nERiC-Validierung erfolgreich! Keine Fehler gefunden.\n";
+            }
+            return static_cast<int>(ErrorCode::SUCCESS);
+        }
+
+        // Payload and --test must agree: a Testmerker in the XML goes to Vorproduktion only,
+        // and a real submission must not carry one.
+        if (!testmerkerMatchesMode(xbrlContent, testMode)) {
+            std::cerr << "FEHLER: Testmerker im XML und --test stimmen nicht überein\n";
+            spdlog::error("Übermittlung abgebrochen: Testmerker im XML ({}) passt nicht zu --test ({})",
+                          !testMode, testMode);
+            return static_cast<int>(ErrorCode::ERIC_VALIDATION_FAILED);
         }
 
         // ── Step 5: Submit ──

@@ -228,7 +228,8 @@ Modi:
   (kein Flag)          Echtversand
 
 Optionen:
-  -p, --password       Zertifikat-Passwort (sonst interaktiv)
+  -p, --password       Zertifikat-Passwort (besser: Umgebungsvariable EBILANZ_CERT_PASSWORD;
+                       sonst interaktiv ohne Echo). Der argv-Wert wird nach dem Parsen überschrieben.
   -o, --output <dir>   XBRL-Datei speichern
   -x, --xbrl <file>    XBRL direkt senden (skip Excel-Parsing)
       --verbose        Debug-Level Ausgabe
@@ -274,6 +275,12 @@ Das ERiC-SDK ist schlecht dokumentiert. Wichtige Hinweise:
 Jede XBRL-Datei braucht mindestens diese Contexts:
 - `current` (duration): Wirtschaftsjahr-Zeitraum für GuV
 - `current_instant`: Bilanzstichtag für Bilanzpositionen
+
+**Rechnungslegungsstandard HGBM + STU (seit 2026-09):** Die Bilanz wird als Handelsbilanz mit
+strukturierter Überleitungsrechnung gemeldet; die STU gliedert nur die Personengesellschafts-
+Positionen um (Ergebnis unverändert). Der Anlagenspiegel (BAL) ist ab Wirtschaftsjahr 2025
+Pflicht und wird nach der Nettomethode aus Buchwerten gebildet (Abgänge nur über die GuV-AfA
+hinaus). Details in der Projekt-Memory `eric-taxonomy-68-lessons`.
 
 **Keine Prior-Contexts (HAOE/Einheitsbilanz):** ERiC weist Vorjahres-Contexts für die
 HAOE-Einheitsbilanz ab („keine Handelsbilanz vor", Fehlercode 170205105). Daher werden

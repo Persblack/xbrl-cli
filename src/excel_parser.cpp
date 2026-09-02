@@ -156,7 +156,7 @@ Stammdaten ExcelParser::readStammdaten(const std::string& filepath,
         data.steuernummerBund = convertSteuernummer(data.steuernummer, data.finanzamtsNummer, bufa);
     }
 
-    spdlog::info("Stammdaten gelesen: {} (StNr: {})", data.firmenname, data.steuernummer);
+    spdlog::debug("Stammdaten gelesen: {} (StNr: {})", data.firmenname, data.steuernummer);
     return data;
 }
 
@@ -363,7 +363,7 @@ BilanzData ExcelParser::readBilanz(const std::string& filepath) const {
     bilanz.vorjahrPositionen["summe_passiva"] = readDouble(ws, "D100");
     bilanz.vorjahr_summePassiva = bilanz.vorjahrPositionen["summe_passiva"];
 
-    spdlog::info("Bilanz gelesen: Aktiva={}, Passiva={}", bilanz.summeAktiva, bilanz.summePassiva);
+    spdlog::debug("Bilanz gelesen: Aktiva={}, Passiva={}", bilanz.summeAktiva, bilanz.summePassiva);
     return bilanz;
 }
 
@@ -460,6 +460,6 @@ GuVData ExcelParser::readGuV(const std::string& filepath) const {
 
     guv.vorjahrPositionen["guv_jahresueberschuss"] = readDouble(ws, "D40");
 
-    spdlog::info("GuV gelesen: Jahresueberschuss={}", guv.jahresueberschuss);
+    spdlog::debug("GuV gelesen: Jahresueberschuss={}", guv.jahresueberschuss);
     return guv;
 }

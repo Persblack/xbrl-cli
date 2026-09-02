@@ -218,7 +218,7 @@ Modi sind kombinierbar: `--validate --test` validiert und sendet dann an die Vor
 | Flag | Beschreibung |
 |------|-------------|
 | `-c, --cert <Datei>` | ELSTER-Zertifikat (.pfx). Pflicht bei Versand. |
-| `-p, --password <Text>` | Zertifikat-Passwort. Wird interaktiv abgefragt wenn nicht angegeben. |
+| `-p, --password <Text>` | Zertifikat-Passwort. Bevorzugt über die Umgebungsvariable `EBILANZ_CERT_PASSWORD` setzen; sonst interaktive Abfrage ohne Echo. Ein auf der Kommandozeile übergebener Wert wird nach dem Einlesen aus `argv` überschrieben, taucht aber in der Shell-History auf. |
 
 ### Ausgabe
 
@@ -414,8 +414,8 @@ Ein ELSTER-Zertifikat (.pfx) erhalten Sie über https://www.elster.de. Für die 
 # Passwort interaktiv eingeben (empfohlen)
 ./ebilanz-submit --cert zertifikat.pfx bilanz-2024.xlsx
 
-# Passwort als Parameter (nur für Automatisierung)
-./ebilanz-submit --cert zertifikat.pfx --password "geheim" bilanz-2024.xlsx
+# Passwort per Umgebungsvariable (für Automatisierung)
+EBILANZ_CERT_PASSWORD="geheim" ./ebilanz-submit --cert zertifikat.pfx bilanz-2024.xlsx
 ```
 
 Die interaktive Passwort-Eingabe unterdrückt das Terminal-Echo — das Passwort wird nicht auf dem Bildschirm angezeigt.

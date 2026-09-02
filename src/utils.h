@@ -25,3 +25,9 @@ std::string currentTimestamp();
 
 // Extract year from ISO date string
 std::string extractYear(const std::string& isoDate);
+
+// User home directory ($HOME / %USERPROFILE%), "." if unset
+std::string userHomeDir();
+
+// true iff the presence of <Testmerker> in the (wrapped) XML matches --test
+bool testmerkerMatchesMode(const std::string& xml, bool testMode);

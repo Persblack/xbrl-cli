@@ -911,7 +911,6 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         double equityChange = assetsCurrentYear - assetsPreviousYear;
         double contribution = equityChange - bvvProfitLoss;  // e.g. 9451.36 - (-3048.64) = 12500
         double withdrawalDistrib = 0.0;
-        double estg6b = 0.0;
 
         addMonetaryFact(root, "de-gaap-ci:BVV.profitLoss", bvvProfitLoss, "current", "EUR");
         // BVV positions are periodType="duration" in the taxonomy

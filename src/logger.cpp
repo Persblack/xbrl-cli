@@ -21,11 +21,12 @@ void setupLogger(const std::string& logFile, bool verbose, bool quiet) {
         consoleSink->set_level(spdlog::level::info);
     }
 
-    // File: always log everything
-    fileSink->set_level(spdlog::level::debug);
+    // File: debug only on --verbose; amount-bearing lines live at debug level,
+    // so a default run leaves no balance figures in the log file.
+    fileSink->set_level(verbose ? spdlog::level::debug : spdlog::level::info);
 
     std::vector<spdlog::sink_ptr> sinks{consoleSink, fileSink};
     auto logger = std::make_shared<spdlog::logger>("ebilanz", sinks.begin(), sinks.end());
-    logger->set_level(spdlog::level::debug);
+    logger->set_level(verbose ? spdlog::level::debug : spdlog::level::info);
     spdlog::set_default_logger(logger);
 }

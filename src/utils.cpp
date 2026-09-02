@@ -1,9 +1,11 @@
 #include "utils.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <stdexcept>
 
@@ -37,16 +39,28 @@ std::string readPassword() {
     }
     std::cout << "\n";
 #else
-    termios oldt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    termios newt = oldt;
-    newt.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
     std::string password;
-    std::getline(std::cin, password);
+    termios oldt{};
+    if (!isatty(STDIN_FILENO) || tcgetattr(STDIN_FILENO, &oldt) != 0) {
+        // Piped/redirected stdin: nothing to hide, plain read
+        std::getline(std::cin, password);
+        return password;
+    }
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    // RAII: echo is restored on every exit path (return, exception).
+    // ponytail: a SIGINT still kills the process before the destructor runs;
+    // no signal handler installed — the shell's `stty sane` is the fallback.
+    struct EchoOff {
+        termios saved;
+        explicit EchoOff(const termios& t) : saved(t) {
+            termios n = t;
+            n.c_lflag &= ~static_cast<tcflag_t>(ECHO);
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &n);
+        }
+        ~EchoOff() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &saved); }
+    } echoOff(oldt);
+
+    std::getline(std::cin, password);
     std::cout << "\n";
 #endif
 
@@ -67,8 +81,9 @@ std::string parseDate(const std::string& germanDate) {
     iss >> day >> dot1 >> month >> dot2 >> year;
 
     if (dot1 != '.' || dot2 != '.' || year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) {
-        // Maybe it's already ISO format
-        if (germanDate.size() == 10 && germanDate[4] == '-' && germanDate[7] == '-') {
+        // Maybe it's already ISO format — digits only, no "abcd-ef-gh" passthrough
+        static const std::regex isoDate(R"(^\d{4}-\d{2}-\d{2}$)");
+        if (std::regex_match(germanDate, isoDate)) {
             return germanDate;
         }
         throw std::runtime_error("Ungültiges Datumsformat: " + germanDate + " (erwartet: TT.MM.JJJJ)");
@@ -161,4 +176,18 @@ std::string extractYear(const std::string& isoDate) {
         return isoDate.substr(0, 4);
     }
     return "";
+}
+
+std::string userHomeDir() {
+#ifdef _WIN32
+    const char* home = std::getenv("USERPROFILE");
+#else
+    const char* home = std::getenv("HOME");
+#endif
+    return home ? home : ".";
+}
+
+bool testmerkerMatchesMode(const std::string& xml, bool testMode) {
+    bool hasTestmerker = xml.find("<Testmerker>") != std::string::npos;
+    return hasTestmerker == testMode;
 }

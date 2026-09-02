@@ -4,6 +4,7 @@ project(ebilanz-submit VERSION 1.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Options
 option(WITH_ERIC "Build with ERiC-SDK support" ON)
@@ -15,8 +16,8 @@ include(FetchContent)
 FetchContent_Declare(
     xlnt
     GIT_REPOSITORY https://github.com/tfussell/xlnt.git
-    GIT_TAG        master
-    GIT_SHALLOW    TRUE
+    # Pinned: master as of 2026-09-02 (`git ls-remote https://github.com/tfussell/xlnt master`)
+    GIT_TAG        297b331435d6dee09bf89c8a5ad974b01f18039b
 )
 set(XLNT_STATIC ON CACHE BOOL "" FORCE)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
@@ -43,6 +44,13 @@ set(LIB_SOURCES
 # Library target (for tests and main)
 add_library(ebilanz_lib STATIC ${LIB_SOURCES})
 target_include_directories(ebilanz_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Hardening (PUBLIC → also applies to ebilanz-submit and the test binary)
+if(NOT MSVC)
+    target_compile_options(ebilanz_lib PUBLIC -Wall -Wextra -fstack-protector-strong)
+    # _FORTIFY_SOURCE needs optimisation; Debug builds would only get a warning
+    target_compile_definitions(ebilanz_lib PUBLIC $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>)
+endif()
 target_link_libraries(ebilanz_lib PUBLIC
     xlnt
     pugixml::pugixml
@@ -109,6 +117,7 @@ add_executable(ebilanz_tests
     tests/test_elster_wrapper.cpp
     tests/test_excel_parser.cpp
     tests/test_eric.cpp
+    tests/test_utils.cpp
 )
 target_link_libraries(ebilanz_tests PRIVATE
     ebilanz_lib

@@ -6,6 +6,8 @@
 
 #include <cmath>
 #include <regex>
+#include <set>
+#include <string>
 
 namespace {
 
@@ -165,7 +167,13 @@ ValidationResult Validator::validate(const Stammdaten& stamm,
 
     // Rule 10: Ergebnisverwendung — Ausschüttungsbetrag > 0 when not Thesaurierung
     {
-        if (stamm.ergebnisverwendung != "thesaurierung" && stamm.ausschuettungsbetrag <= 0.0) {
+        static const std::set<std::string> knownVerwendung = {"thesaurierung", "ausschuettung", "teilausschuettung"};
+        if (knownVerwendung.count(stamm.ergebnisverwendung) == 0) {
+            addError(result, "ergebnisverwendung",
+                     "Ergebnisverwendung '" + stamm.ergebnisverwendung +
+                     "' unbekannt (erlaubt: Thesaurierung, Ausschüttung, Teilausschüttung)");
+        } else if (stamm.ergebnisverwendung != "thesaurierung" && stamm.ausschuettungsbetrag <= 0.0) {
+
             addError(result, "ergebnisverwendung",
                      "Ergebnisverwendung ist '" + stamm.ergebnisverwendung +
                      "', aber kein Ausschüttungsbetrag angegeben (muss > 0).");

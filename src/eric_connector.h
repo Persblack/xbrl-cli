@@ -30,7 +30,6 @@ public:
 
 private:
 #ifdef WITH_ERIC
-    void* ericHandle_ = nullptr;
     uint32_t certHandle_ = 0;  // EricZertifikatHandle
     std::string certPassword_;  // Stored for PIN usage in crypto operations
 #endif

@@ -3,6 +3,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -14,6 +15,43 @@
 #endif
 
 namespace fs = std::filesystem;
+
+#ifdef WITH_ERIC
+namespace {
+
+// RAII for EricRueckgabepuffer: freed on every exit path, no leak when a second
+// Erzeugen() fails. h == 0 means allocation failed.
+struct Puffer {
+    EricRueckgabepufferHandle h = EricRueckgabepufferErzeugen();
+    Puffer() = default;
+    Puffer(const Puffer&) = delete;
+    Puffer& operator=(const Puffer&) = delete;
+    ~Puffer() {
+        if (h) EricRueckgabepufferFreigeben(h);
+    }
+    // Buffer content, never nullptr
+    const char* text() const {
+        const char* t = h ? EricRueckgabepufferInhalt(h) : nullptr;
+        return t ? t : "";
+    }
+};
+
+std::string ericErrorText(int rc) {
+    Puffer buf;
+    if (buf.h) {
+        EricHoleFehlerText(rc, buf.h);
+        std::string t = buf.text();
+        if (!t.empty()) return t;
+    }
+    return "Unbekannter ERiC-Fehler (Code " + std::to_string(rc) + ")";
+}
+
+fs::path ebilanzDir() {
+    return fs::path(userHomeDir()) / ".ebilanz";
+}
+
+} // namespace
+#endif
 
 bool ericSdkAvailable() {
 #ifdef WITH_ERIC
@@ -27,24 +65,22 @@ ERiCConnector::ERiCConnector() {
 #ifdef WITH_ERIC
     spdlog::debug("ERiC-SDK Initialisierung...");
 
-    // Determine plugin and log paths
-    fs::path buildDir = fs::current_path();
-    fs::path pluginDir = buildDir / "lib" / "plugins";
-    fs::path logDir = buildDir / "logs";
+    // Plugins: nullptr → ERiC searches next to libericapi itself (works from any cwd).
+    // Log dir: ~/.ebilanz/logs (falls back to the OS temp dir if it cannot be created).
+    fs::path logDir = ebilanzDir() / "logs";
+    std::error_code ec;
+    fs::create_directories(logDir, ec);
+    std::string logDirStr = logDir.string();
 
-    // Create log directory if needed
-    fs::create_directories(logDir);
-
-    // Initialize ERiC
-    int rc = EricInitialisiere(pluginDir.string().c_str(), logDir.string().c_str());
+    int rc = EricInitialisiere(nullptr, ec ? nullptr : logDirStr.c_str());
     initialized_ = (rc == ERIC_OK);
 
     if (!initialized_) {
-        spdlog::error("ERiC Initialisierung fehlgeschlagen: Fehlercode {}", rc);
+        spdlog::error("ERiC Initialisierung fehlgeschlagen: {}", ericErrorText(rc));
     } else {
         spdlog::info("ERiC-SDK erfolgreich initialisiert");
-        spdlog::debug("  Plugin-Verzeichnis: {}", pluginDir.string());
-        spdlog::debug("  Log-Verzeichnis: {}", logDir.string());
+        spdlog::debug("  Plugin-Verzeichnis: (neben libericapi)");
+        spdlog::debug("  Log-Verzeichnis: {}", ec ? "(System-Temp)" : logDirStr);
     }
 #else
     spdlog::debug("ERiC-SDK nicht verfügbar (ohne WITH_ERIC kompiliert)");
@@ -82,24 +118,35 @@ bool ERiCConnector::loadCertificate(const std::string& pfxPath, const std::strin
         return false;
     }
 
+    // A previously loaded handle is closed first (also recommended by ericapi.h
+    // before EricPruefeZertifikatPin).
+    if (certLoaded_ && certHandle_) {
+        EricCloseHandleToCertificate(certHandle_);
+        certHandle_ = 0;
+        certLoaded_ = false;
+        secureZero(certPassword_);
+    }
+
+    // Verify the PIN up front so a wrong password fails here with a clear message
+    // instead of deep inside submit(). keyType 0 = signature key (soft PSE: same key).
+    int rc = EricPruefeZertifikatPin(pfxPath.c_str(), password.c_str(), 0);
+    if (rc != ERIC_OK) {
+        if (rc == ERIC_CRYPT_E_PIN_WRONG) {
+            spdlog::error("Zertifikat-Passwort/PIN ist falsch ({})", pfxPath);
+        } else {
+            spdlog::error("Zertifikat-PIN-Prüfung fehlgeschlagen: {}", ericErrorText(rc));
+        }
+        return false;
+    }
+
     uint32_t pinInfo = 0;
-    int rc = EricGetHandleToCertificate(&certHandle_, &pinInfo, pfxPath.c_str());
+    rc = EricGetHandleToCertificate(&certHandle_, &pinInfo, pfxPath.c_str());
 
     certLoaded_ = (rc == ERIC_OK);
 
     if (!certLoaded_) {
-        spdlog::error("Zertifikat laden fehlgeschlagen: Fehlercode {}", rc);
-
-        // Get error message from ERiC
-        EricRueckgabepufferHandle errorBuffer = EricRueckgabepufferErzeugen();
-        if (errorBuffer) {
-            EricHoleFehlerText(rc, errorBuffer);
-            const char* errorText = EricRueckgabepufferInhalt(errorBuffer);
-            if (errorText) {
-                spdlog::error("  ERiC-Fehler: {}", errorText);
-            }
-            EricRueckgabepufferFreigeben(errorBuffer);
-        }
+        certHandle_ = 0;
+        spdlog::error("Zertifikat laden fehlgeschlagen: {}", ericErrorText(rc));
         return false;
     }
 
@@ -126,11 +173,11 @@ ValidationResult ERiCConnector::validate(const std::string& xbrlContent) {
 
     spdlog::debug("ERiC-Validierung ({} Bytes XBRL)", xbrlContent.size());
 
-    // Create return buffers
-    EricRueckgabepufferHandle rueckgabe = EricRueckgabepufferErzeugen();
-    EricRueckgabepufferHandle serverantwort = EricRueckgabepufferErzeugen();
+    // Return buffers (RAII: freed on every path)
+    Puffer rueckgabe;
+    Puffer serverantwort;
 
-    if (!rueckgabe || !serverantwort) {
+    if (!rueckgabe.h || !serverantwort.h) {
         result.isValid = false;
         result.errors.push_back({"eric_buffer", "Konnte Rückgabepuffer nicht erstellen"});
         return result;
@@ -151,8 +198,8 @@ ValidationResult ERiCConnector::validate(const std::string& xbrlContent) {
         nullptr,  // No print parameter
         nullptr,  // No crypto parameter (validation only)
         nullptr,  // No transfer handle
-        rueckgabe,
-        serverantwort
+        rueckgabe.h,
+        serverantwort.h
     );
 
     // Check result
@@ -161,41 +208,35 @@ ValidationResult ERiCConnector::validate(const std::string& xbrlContent) {
         spdlog::info("ERiC-Validierung erfolgreich");
 
         // Check for warnings in return buffer
-        const char* rueckgabeText = EricRueckgabepufferInhalt(rueckgabe);
-        if (rueckgabeText && strlen(rueckgabeText) > 0) {
+        const char* rueckgabeText = rueckgabe.text();
+        if (strlen(rueckgabeText) > 0) {
             spdlog::debug("ERiC Rückgabe: {}", rueckgabeText);
         }
     } else {
         result.isValid = false;
+        std::string errorMsg = ericErrorText(rc);
 
-        // Get error message
-        EricRueckgabepufferHandle errorBuffer = EricRueckgabepufferErzeugen();
-        if (errorBuffer) {
-            EricHoleFehlerText(rc, errorBuffer);
-            const char* errorText = EricRueckgabepufferInhalt(errorBuffer);
-            std::string errorMsg = errorText ? errorText : "Unbekannter ERiC-Fehler";
-            result.errors.push_back({"eric_validation", errorMsg});
-            spdlog::error("ERiC-Validierung fehlgeschlagen: {}", errorMsg);
-            EricRueckgabepufferFreigeben(errorBuffer);
-        }
-
-        // Also log rueckgabe content for details
-        const char* rueckgabeText = EricRueckgabepufferInhalt(rueckgabe);
-        if (rueckgabeText && strlen(rueckgabeText) > 0) {
+        // Write the full response next to the history/logs (not into cwd);
+        // spdlog may truncate large messages.
+        const char* rueckgabeText = rueckgabe.text();
+        if (strlen(rueckgabeText) > 0) {
             spdlog::debug("ERiC Rückgabe: {} Bytes", strlen(rueckgabeText));
-            // Write full response to file (spdlog may truncate large messages)
-            std::ofstream errFile("eric-validation-errors.xml");
-            if (errFile.is_open()) {
-                errFile << rueckgabeText;
-                errFile.close();
-                spdlog::debug("ERiC Fehler gespeichert: eric-validation-errors.xml");
+            fs::path errPath = ebilanzDir() / "eric-validation-errors.xml";
+            std::error_code ec;
+            fs::create_directories(errPath.parent_path(), ec);
+            std::ofstream errFile(errPath);
+            errFile << rueckgabeText;
+            errFile.close();
+            if (errFile) {
+                errorMsg += " (Details: " + errPath.string() + ")";
+            } else {
+                spdlog::warn("Konnte {} nicht schreiben", errPath.string());
             }
         }
-    }
 
-    // Clean up buffers
-    EricRueckgabepufferFreigeben(rueckgabe);
-    EricRueckgabepufferFreigeben(serverantwort);
+        result.errors.push_back({"eric_validation", errorMsg});
+        spdlog::error("ERiC-Validierung fehlgeschlagen: {}", errorMsg);
+    }
 
 #else
     spdlog::warn("ERiC-SDK nicht verfügbar — Validierung übersprungen");
@@ -227,11 +268,11 @@ SubmitResult ERiCConnector::submit(const std::string& xbrlContent, bool testMode
 
     spdlog::info("Sende an Finanzamt ({})...", testMode ? "Vorproduktion" : "Echtversand");
 
-    // Create return buffers
-    EricRueckgabepufferHandle rueckgabe = EricRueckgabepufferErzeugen();
-    EricRueckgabepufferHandle serverantwort = EricRueckgabepufferErzeugen();
+    // Return buffers (RAII: freed on every path)
+    Puffer rueckgabe;
+    Puffer serverantwort;
 
-    if (!rueckgabe || !serverantwort) {
+    if (!rueckgabe.h || !serverantwort.h) {
         result.success = false;
         result.message = "Konnte Rückgabepuffer nicht erstellen";
         result.errorCode = ErrorCode::ERIC_SUBMIT_FAILED;
@@ -259,8 +300,8 @@ SubmitResult ERiCConnector::submit(const std::string& xbrlContent, bool testMode
         nullptr,  // No print parameter
         &cryptoParam,
         nullptr,  // No transfer handle (not Datenabholung)
-        rueckgabe,
-        serverantwort
+        rueckgabe.h,
+        serverantwort.h
     );
 
     // Check result
@@ -270,8 +311,8 @@ SubmitResult ERiCConnector::submit(const std::string& xbrlContent, bool testMode
         result.errorCode = ErrorCode::SUCCESS;
 
         // Extract transfer ticket from return buffer
-        const char* rueckgabeText = EricRueckgabepufferInhalt(rueckgabe);
-        if (rueckgabeText && strlen(rueckgabeText) > 0) {
+        const char* rueckgabeText = rueckgabe.text();
+        if (strlen(rueckgabeText) > 0) {
             std::string rueckgabeStr(rueckgabeText);
             spdlog::debug("ERiC Rückgabe: {}", rueckgabeStr);
 
@@ -286,9 +327,9 @@ SubmitResult ERiCConnector::submit(const std::string& xbrlContent, bool testMode
             }
         }
 
-        // Log server response
-        const char* serverText = EricRueckgabepufferInhalt(serverantwort);
-        if (serverText && strlen(serverText) > 0) {
+        // Log server response (debug only — may echo submitted data)
+        const char* serverText = serverantwort.text();
+        if (strlen(serverText) > 0) {
             spdlog::debug("Server-Antwort: {}", serverText);
         }
 
@@ -297,32 +338,20 @@ SubmitResult ERiCConnector::submit(const std::string& xbrlContent, bool testMode
     } else {
         result.success = false;
         result.errorCode = ErrorCode::ERIC_SUBMIT_FAILED;
-
-        // Get error message
-        EricRueckgabepufferHandle errorBuffer = EricRueckgabepufferErzeugen();
-        if (errorBuffer) {
-            EricHoleFehlerText(rc, errorBuffer);
-            const char* errorText = EricRueckgabepufferInhalt(errorBuffer);
-            result.message = errorText ? errorText : "Unbekannter ERiC-Fehler";
-            spdlog::error("ERiC-Versand fehlgeschlagen: {}", result.message);
-            EricRueckgabepufferFreigeben(errorBuffer);
-        }
+        result.message = ericErrorText(rc);
+        spdlog::error("ERiC-Versand fehlgeschlagen: {}", result.message);
 
         // Log rueckgabe and server response for debugging
-        const char* rueckgabeText = EricRueckgabepufferInhalt(rueckgabe);
-        if (rueckgabeText && strlen(rueckgabeText) > 0) {
+        const char* rueckgabeText = rueckgabe.text();
+        if (strlen(rueckgabeText) > 0) {
             spdlog::debug("ERiC Rückgabe: {}", rueckgabeText);
         }
 
-        const char* serverText = EricRueckgabepufferInhalt(serverantwort);
-        if (serverText && strlen(serverText) > 0) {
+        const char* serverText = serverantwort.text();
+        if (strlen(serverText) > 0) {
             spdlog::debug("Server-Antwort: {}", serverText);
         }
     }
-
-    // Clean up buffers
-    EricRueckgabepufferFreigeben(rueckgabe);
-    EricRueckgabepufferFreigeben(serverantwort);
 
     // SECURITY: Clear password from memory
     secureZero(certPassword_);
