@@ -69,7 +69,7 @@ ValidationResult Validator::validate(const Stammdaten& stamm,
         if (!validateSteuernummerFormat(stamm.steuernummer)) {
             addError(result, "steuernummer_format",
                      "Steuernummer ungültiges Format: '" + stamm.steuernummer +
-                     "' (erwartet: XX/XXX/XXXXX)");
+                     "' (erwartet: XX/XXX/XXXXX oder XXXXX/XXXXX)");
         }
     }
 

@@ -378,9 +378,8 @@ int main(int argc, char* argv[]) {
             for (const auto& e : ericValidation.errors) {
                 std::cerr << "ERiC-Hinweis: " << e.message << "\n";
             }
-            // Continue to submission — server-side validation may accept these
-            spdlog::warn("Lokale Validierung fehlgeschlagen, versuche Übermittlung trotzdem...");
-            if (!quiet) std::cerr << "Versuche Übermittlung trotzdem...\n";
+            spdlog::error("Übermittlung wegen fehlgeschlagener ERiC-Validierung abgebrochen.");
+            return static_cast<int>(ErrorCode::ERIC_VALIDATION_FAILED);
         } else {
             if (!quiet) printOk();
         }

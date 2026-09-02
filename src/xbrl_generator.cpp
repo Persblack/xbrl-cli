@@ -151,7 +151,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         auto scenario = ctx.append_child("scenario");
         auto taxMember = scenario.append_child("xbrldi:explicitMember");
         taxMember.append_attribute("dimension") = "de-gaap-ci:dim_taxTrans";
-        taxMember.text().set("de-gaap-ci:dim_taxBal");
+        taxMember.text().set("de-gaap-ci:dim_comBal");
         auto assMember = scenario.append_child("xbrldi:explicitMember");
         assMember.append_attribute("dimension") = "de-gaap-ci:dim_changes.nt.ass.gross";
         assMember.text().set(dimMember);
@@ -368,10 +368,11 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
     addStringFact(root, "de-gcd:genInfo.report.period.fiscalPreviousYearEnd", vorjahrBis, "current");
     addStringFact(root, "de-gcd:genInfo.report.period.balSheetClosingDatePreviousYear", vorjahrBis, "current");
 
-    // Accounting standard — HAOE for Einheitsbilanz (HB=StB, no Überleitung needed)
+    // The submitted figures are the HGB financial statements. Tax-only partnership
+    // classifications are supplied through the structured reconciliation below.
     {
         auto accStd = root.append_child("de-gcd:genInfo.report.id.accountingStandard");
-        auto child = accStd.append_child("de-gcd:genInfo.report.id.accountingStandard.accountingStandard.HAOE");
+        auto child = accStd.append_child("de-gcd:genInfo.report.id.accountingStandard.accountingStandard.HGBM");
         child.append_attribute("contextRef") = "current";
     }
 
@@ -428,7 +429,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         child.append_attribute("xsi:nil") = "true";
     };
     addNilReportElement("EB");    // Eröffnungsbilanz — not applicable (regular filing)
-    addNilReportElement("STU");   // Steuerliche Modifikationen — nil (Einheitsbilanz, no differences)
+    addReportElement("STU");      // Strukturierte Überleitungsrechnung
     addReportElement("BVV");      // Beteiligungsübersicht — required when GuV is declared
     addReportElement("BAL");      // Anlagenspiegel — condensed form (Kurzform)
     addNilReportElement("KKE");   // Kapitalkontenentwicklung — not applicable (GmbH)
@@ -575,8 +576,35 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
             get("bs.ass.currAss.receiv.other.assetManaging") +
             get("bs.ass.currAss.receiv.other.commPart") +
             get("bs.ass.currAss.receiv.other.reInsurClaim") +
-            get("bs.ass.currAss.receiv.other.shareholders") +
-            get("bs.ass.currAss.receiv.other.unpaidCapital"));
+            get("bs.ass.currAss.receiv.other.shareholders"));
+
+        // Tangible office/business equipment: sum the detail positions.
+        set("bs.ass.fixAss.tan.otherEquipm",
+            get("bs.ass.fixAss.tan.otherEquipm.factory") +
+            get("bs.ass.fixAss.tan.otherEquipm.office") +
+            get("bs.ass.fixAss.tan.otherEquipm.gwg") +
+            get("bs.ass.fixAss.tan.otherEquipm.gwgsammelposten") +
+            get("bs.ass.fixAss.tan.otherEquipm.otherbga") +
+            get("bs.ass.fixAss.tan.otherEquipm.misc") +
+            get("bs.ass.fixAss.tan.otherEquipm.passengerCars") +
+            get("bs.ass.fixAss.tan.otherEquipm.comVehicle") +
+            get("bs.ass.fixAss.tan.otherEquipm.otherTransportMeans"));
+
+        // Participation in a GbR: detail -> commercial partnership -> partnership -> total.
+        set("bs.ass.fixAss.fin.particip.partnerships.commPart",
+            get("bs.ass.fixAss.fin.particip.partnerships.commPart.other") +
+            get("bs.ass.fixAss.fin.particip.partnerships.commPart.silentAtyp"));
+        set("bs.ass.fixAss.fin.particip.partnerships",
+            get("bs.ass.fixAss.fin.particip.partnerships.commPart") +
+            get("bs.ass.fixAss.fin.particip.partnerships.assetManaging"));
+        set("bs.ass.fixAss.fin.particip",
+            get("bs.ass.fixAss.fin.particip.corporations") +
+            get("bs.ass.fixAss.fin.particip.partnerships") +
+            get("bs.ass.fixAss.fin.particip.assoc") +
+            get("bs.ass.fixAss.fin.particip.generalPartners") +
+            get("bs.ass.fixAss.fin.particip.jointVent") +
+            get("bs.ass.fixAss.fin.particip.silent") +
+            get("bs.ass.fixAss.fin.particip.other"));
 
         // Liabilities other: sum of sub-classifications
         set("bs.eqLiab.liab.other",
@@ -610,7 +638,8 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         // Receivables
         set("bs.ass.currAss.receiv",
             get("bs.ass.currAss.receiv.trade") + get("bs.ass.currAss.receiv.affil") +
-            get("bs.ass.currAss.receiv.particip") + get("bs.ass.currAss.receiv.other"));
+            get("bs.ass.currAss.receiv.particip") + get("bs.ass.currAss.receiv.other") +
+            get("bs.ass.currAss.receiv.other.unpaidCapital"));
         // Securities (current)
         set("bs.ass.currAss.securities",
             get("bs.ass.currAss.securities.affil") + get("bs.ass.currAss.securities.other"));
@@ -621,7 +650,8 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         // Total assets
         set("bs.ass",
             get("bs.ass.fixAss") + get("bs.ass.currAss") + get("bs.ass.prepaidExp") +
-            get("bs.ass.defTax") + get("bs.ass.SurplusFromOffsetting"));
+            get("bs.ass.defTax") + get("bs.ass.SurplusFromOffsetting") +
+            get("bs.ass.deficitNotCoveredByCapital"));
 
         // Subscribed capital: taxonomy calc = corp(+1) - unpaidCap(-1)
         // corp = the full registered capital (Stammkapital)
@@ -635,7 +665,8 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         set("bs.eqLiab.equity",
             get("bs.eqLiab.equity.subscribed") + get("bs.eqLiab.equity.capRes") +
             get("bs.eqLiab.equity.revenueRes") + get("bs.eqLiab.equity.profitLoss") +
-            get("bs.eqLiab.equity.netIncome"));
+            get("bs.eqLiab.equity.netIncome") +
+            get("bs.eqLiab.equity.deficitNotCoveredByCapital"));
         // Accruals
         set("bs.eqLiab.accruals",
             get("bs.eqLiab.accruals.pensions") + get("bs.eqLiab.accruals.tax") +
@@ -730,8 +761,20 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
             get("is.netIncome.regular.operatingTC.staff") -
             get("is.netIncome.regular.operatingTC.deprAmort") -
             get("is.netIncome.regular.operatingTC.otherCost"));
-        // netParticipation = earningSecurities - amortFinanc
+        set("is.netIncome.regular.fin.netParticipation.earnings",
+            get("is.netIncome.regular.fin.netParticipation.earnings.corporations") +
+            get("is.netIncome.regular.fin.netParticipation.earnings.partnerships") +
+            get("is.netIncome.regular.fin.netParticipation.earnings.silentPart"));
+        set("is.netIncome.regular.fin.netParticipation.amortFinanc",
+            get("is.netIncome.regular.fin.netParticipation.amortFinanc.partnerships") +
+            get("is.netIncome.regular.fin.netParticipation.amortFinanc.financialsExcept") +
+            get("is.netIncome.regular.fin.netParticipation.amortFinanc.longTermRecAllowance") +
+            get("is.netIncome.regular.fin.netParticipation.amortFinanc.longTermRecLumSumAllow") +
+            get("is.netIncome.regular.fin.netParticipation.amortFinanc.secCurrAss"));
+        // netParticipation = earnings from participations + earnings from
+        // securities - amortisation of financial assets.
         set("is.netIncome.regular.fin.netParticipation",
+            get("is.netIncome.regular.fin.netParticipation.earnings") +
             get("is.netIncome.regular.fin.netParticipation.earningSecurities") -
             get("is.netIncome.regular.fin.netParticipation.amortFinanc"));
         // netInterest = income - expenses
@@ -772,6 +815,11 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         spdlog::debug("Bilanzgewinn: {} (Gewinnvortrag {} + JÜ {})",
                       originalGewinnvortrag + netInc, originalGewinnvortrag, netInc);
     }
+
+    // § 268 Abs. 3 HGB: mirror the asset-side deficit in the equity calculation.
+    // This makes reported equity zero while retaining the subscribed capital and loss.
+    bilanzFacts["de-gaap-ci:bs.eqLiab.equity.deficitNotCoveredByCapital"] =
+        getFact(bilanzFacts, "de-gaap-ci:bs.ass.deficitNotCoveredByCapital");
 
     recomputeBilanzSummaries(bilanzFacts);
 
@@ -857,6 +905,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         // BVV positions are periodType="duration" in the taxonomy
         addMonetaryFact(root, "de-gaap-ci:BVV.profitLoss.assetsCurrentYear", assetsCurrentYear, "current", "EUR");
         addMonetaryFact(root, "de-gaap-ci:BVV.profitLoss.assetsPreviousYear", assetsPreviousYear, "current", "EUR");
+        addMonetaryFact(root, "de-gaap-ci:BVV.profitLoss.assetsPreviousYear.assets", assetsPreviousYear, "current", "EUR");
         addMonetaryFact(root, "de-gaap-ci:BVV.profitLoss.contribution", contribution, "current", "EUR");
         addMonetaryFact(root, "de-gaap-ci:BVV.profitLoss.withdrawalDistrib", withdrawalDistrib, "current", "EUR");
         // EStG6b is rechtsformfremd for KSt — must be nil
@@ -870,6 +919,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         writtenTags.insert("de-gaap-ci:BVV.profitLoss");
         writtenTags.insert("de-gaap-ci:BVV.profitLoss.assetsCurrentYear");
         writtenTags.insert("de-gaap-ci:BVV.profitLoss.assetsPreviousYear");
+        writtenTags.insert("de-gaap-ci:BVV.profitLoss.assetsPreviousYear.assets");
         writtenTags.insert("de-gaap-ci:BVV.profitLoss.contribution");
         writtenTags.insert("de-gaap-ci:BVV.profitLoss.withdrawalDistrib");
         writtenTags.insert("de-gaap-ci:BVV.profitLoss.EStG6b");
@@ -914,7 +964,65 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         writtenTags.insert("de-gaap-ci:incomeUse.dividends");
     }
 
-    // STU: No hbst.transfer entries needed — nil report element for Einheitsbilanz.
+    // STU: Reclassify the HGB partnership positions to the tax-only balance-sheet
+    // classification and neutralise tax-prohibited GuV detail positions. The
+    // collective GuV item preserves the unchanged taxable net result.
+    {
+        auto transfer = root.append_child("de-gaap-ci:hbst.transfer");
+        auto kind = transfer.append_child("de-gaap-ci:hbst.transfer.kind");
+        auto kindValue = kind.append_child("de-gaap-ci:hbst.transfer.kind.reclassificationChangeValue");
+        kindValue.append_attribute("contextRef") = "current";
+
+        auto addGuVTransfer = [&](const char* position, double change) {
+            auto tuple = transfer.append_child("de-gaap-ci:hbst.transfer.isChangeNetIncome");
+            auto name = tuple.append_child("de-gaap-ci:hbst.transfer.isChangeNetIncome.name");
+            name.append_attribute("contextRef") = "current";
+            name.text().set(position);
+            auto value = tuple.append_child("de-gaap-ci:hbst.transfer.isChangeNetIncome.changeValueActualPeriod");
+            value.append_attribute("contextRef") = "current";
+            value.append_attribute("unitRef") = "EUR";
+            value.append_attribute("decimals") = "2";
+            value.text().set(formatDecimal(change).c_str());
+        };
+        auto addAssetTransfer = [&](const char* position, double change) {
+            auto tuple = transfer.append_child("de-gaap-ci:hbst.transfer.bsAss");
+            auto name = tuple.append_child("de-gaap-ci:hbst.transfer.bsAss.name");
+            name.append_attribute("contextRef") = "current";
+            name.text().set(position);
+            auto actual = tuple.append_child("de-gaap-ci:hbst.transfer.bsAss.changeValueActualPeriod");
+            actual.append_attribute("contextRef") = "current";
+            actual.append_attribute("unitRef") = "EUR";
+            actual.append_attribute("decimals") = "2";
+            actual.text().set(formatDecimal(change).c_str());
+            auto previous = tuple.append_child("de-gaap-ci:hbst.transfer.bsAss.changeValuePreviousPeriod");
+            previous.append_attribute("contextRef") = "current";
+            previous.append_attribute("unitRef") = "EUR";
+            previous.append_attribute("decimals") = "2";
+            previous.text().set("0.00");
+        };
+
+        const double partnershipProfit =
+            getFact(guvFacts, "de-gaap-ci:is.netIncome.regular.fin.netParticipation.earnings.partnerships");
+        const double partnershipLoss =
+            getFact(guvFacts, "de-gaap-ci:is.netIncome.regular.fin.netParticipation.amortFinanc.partnerships");
+        const double partnershipNet = partnershipProfit - partnershipLoss;
+
+        const double partnershipBookValue =
+            getFact(bilanzFacts, "de-gaap-ci:bs.ass.fixAss.fin.particip.other");
+        addAssetTransfer("de-gaap-ci:bs.ass.fixAss.fin.particip.other", -partnershipBookValue);
+        addAssetTransfer("de-gaap-ci:bs.ass.fixAss.fin.particip.partnerships.commPart.other", partnershipBookValue);
+        addAssetTransfer("de-gaap-ci:bs.ass.fixAss.fin.particip.partnerships.commPart", partnershipBookValue);
+        addAssetTransfer("de-gaap-ci:bs.ass.fixAss.fin.particip.partnerships", partnershipBookValue);
+
+        addGuVTransfer("de-gaap-ci:is.netIncome.regular.fin.netParticipation.earnings.partnerships", -partnershipProfit);
+        addGuVTransfer("de-gaap-ci:is.netIncome.regular.fin.netParticipation.earnings", -partnershipProfit);
+        addGuVTransfer("de-gaap-ci:is.netIncome.regular.fin.netParticipation.amortFinanc.partnerships", -partnershipLoss);
+        addGuVTransfer("de-gaap-ci:is.netIncome.regular.fin.netParticipation.amortFinanc", -partnershipLoss);
+        addGuVTransfer("de-gaap-ci:is.netIncome.regular.fin.netParticipation", -partnershipNet);
+        addGuVTransfer("de-gaap-ci:is.netIncome.regular.fin", -partnershipNet);
+        addGuVTransfer("de-gaap-ci:is.netIncome.eat", -partnershipNet);
+        addGuVTransfer("de-gaap-ci:is.netIncome.collItemChangeProfitHbst", partnershipNet);
+    }
 
     // ── BAL: Anlagenspiegel (full/brutto) ──
     // Dimensional table using dim_changes.nt.ass.gross with sub-category rows.
@@ -994,12 +1102,14 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
             {"de-gaap-ci:bs.ass.fixAss.tan.landBuildings", "fixAss_tan_land"},
             {"de-gaap-ci:bs.ass.fixAss.tan.machinery", "fixAss_tan_mach"},
             {"de-gaap-ci:bs.ass.fixAss.tan.otherEquipm", "fixAss_tan_equip"},
+            {"de-gaap-ci:bs.ass.fixAss.tan.otherEquipm.office", "fixAss_tan_equip_office"},
             {"de-gaap-ci:bs.ass.fixAss.tan.inConstrAdvPaym", "fixAss_tan_constr"},
             {"de-gaap-ci:bs.ass.fixAss.tan.other", "fixAss_tan_other"},
             // Financial sub-types
             {"de-gaap-ci:bs.ass.fixAss.fin.sharesInAffil", "fixAss_fin_shares"},
             {"de-gaap-ci:bs.ass.fixAss.fin.loansToAffil", "fixAss_fin_loans"},
             {"de-gaap-ci:bs.ass.fixAss.fin.particip", "fixAss_fin_partic"},
+            {"de-gaap-ci:bs.ass.fixAss.fin.particip.other", "fixAss_fin_partic_other"},
             {"de-gaap-ci:bs.ass.fixAss.fin.loansToParticip", "fixAss_fin_loansp"},
             {"de-gaap-ci:bs.ass.fixAss.fin.securities", "fixAss_fin_sec"},
             {"de-gaap-ci:bs.ass.fixAss.fin.otherLoans", "fixAss_fin_othloans"},

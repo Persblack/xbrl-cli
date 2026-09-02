@@ -113,8 +113,11 @@ std::string convertSteuernummer(const std::string& vereinfacht,
 }
 
 bool validateSteuernummerFormat(const std::string& nr) {
-    static const std::regex pattern(R"(\d{2}/\d{3}/\d{5})");
-    return std::regex_match(nr, pattern);
+    // The Finanzamt Wangen print format omits the separator after the first two
+    // digits (e.g. 91060/35565 = 91/060/35565). Both represent ten digits.
+    static const std::regex standard(R"(\d{2}/\d{3}/\d{5})");
+    static const std::regex compact(R"(\d{5}/\d{5})");
+    return std::regex_match(nr, standard) || std::regex_match(nr, compact);
 }
 
 bool validateBufaFormat(const std::string& nr) {

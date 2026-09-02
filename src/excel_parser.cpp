@@ -228,6 +228,7 @@ BilanzData ExcelParser::readBilanz(const std::string& filepath) const {
     bilanz.positionen["rechnungsabgrenzung_aktiv"] = readDouble(ws, "C57");
     bilanz.positionen["latente_steuern_aktiv"] = readDouble(ws, "C58");
     bilanz.positionen["unterschiedsbetrag_aktiv"] = readDouble(ws, "C59");
+    bilanz.positionen["fehlbetrag_nicht_durch_eigenkapital_gedeckt"] = readDouble(ws, "C60");
 
     bilanz.positionen["summe_aktiva"] = readDouble(ws, "C61");
     bilanz.summeAktiva = bilanz.positionen["summe_aktiva"];
@@ -324,6 +325,7 @@ BilanzData ExcelParser::readBilanz(const std::string& filepath) const {
     bilanz.vorjahrPositionen["rechnungsabgrenzung_aktiv"] = readDouble(ws, "D57");
     bilanz.vorjahrPositionen["latente_steuern_aktiv"] = readDouble(ws, "D58");
     bilanz.vorjahrPositionen["unterschiedsbetrag_aktiv"] = readDouble(ws, "D59");
+    bilanz.vorjahrPositionen["fehlbetrag_nicht_durch_eigenkapital_gedeckt"] = readDouble(ws, "D60");
 
     bilanz.vorjahrPositionen["summe_aktiva"] = readDouble(ws, "D61");
     bilanz.vorjahr_summeAktiva = bilanz.vorjahrPositionen["summe_aktiva"];
