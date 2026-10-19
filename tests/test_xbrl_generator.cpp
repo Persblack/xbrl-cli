@@ -54,6 +54,7 @@ static Stammdaten createTestStammdaten() {
     s.steuernummerBund = "1234567890123";
     s.finanzamtsNummer = "1234";
     s.firmenname = "Test GmbH";
+    s.rechtsform = "gmbh";
     s.strasse = "Musterstr. 1";
     s.plz = "12345";
     s.ort = "Berlin";
@@ -347,6 +348,30 @@ TEST_CASE("XBRLGenerator: Stammdaten") {
 
     SECTION("Ort present") {
         REQUIRE(xbrl.find("Berlin") != std::string::npos);
+    }
+}
+
+TEST_CASE("XBRLGenerator: Rechtsform legalStatus") {
+    auto config = createTestConfig();
+    XBRLGenerator generator(config);
+
+    auto bilanz = createTestBilanz();
+    auto guv = createTestGuV();
+
+    SECTION("GmbH") {
+        auto stamm = createTestStammdaten();
+        stamm.rechtsform = "gmbh";
+        std::string xbrl = generator.generate(stamm, bilanz, guv);
+        REQUIRE(xbrl.find("de-gcd:genInfo.company.id.legalStatus.legalStatus.GMBH") != std::string::npos);
+        REQUIRE(xbrl.find("de-gcd:genInfo.company.id.legalStatus.legalStatus.UG") == std::string::npos);
+    }
+
+    SECTION("UG (haftungsbeschränkt)") {
+        auto stamm = createTestStammdaten();
+        stamm.rechtsform = "ug";
+        std::string xbrl = generator.generate(stamm, bilanz, guv);
+        REQUIRE(xbrl.find("de-gcd:genInfo.company.id.legalStatus.legalStatus.UG") != std::string::npos);
+        REQUIRE(xbrl.find("de-gcd:genInfo.company.id.legalStatus.legalStatus.GMBH") == std::string::npos);
     }
 }
 

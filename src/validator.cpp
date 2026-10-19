@@ -57,12 +57,51 @@ ValidationResult Validator::validate(const Stammdaten& stamm,
         }
     }
 
-    // Rule 3: GmbH-Kapital >= 25.000 (ERROR, not warning — UG not supported)
+    // Rule 3: Rechtsform und rechtsformabhängiges Mindestkapital.
+    // GmbH und UG (haftungsbeschränkt) sind beide vom Typ "KST" (Technischer Leitfaden
+    // HGB-Taxonomie, Kap. B.4.1), unterscheiden sich aber im Mindeststammkapital:
+    // GmbH >= 25.000 EUR (§ 5 Abs. 1 GmbHG), UG >= 1 EUR (§ 5a Abs. 1 GmbHG).
+    // Bei unbekannter Rechtsform greift ausschließlich die Rechtsform-Prüfung,
+    // damit keine irreführende Kapitalmeldung erzeugt wird.
     {
-        if (bilanz.gezeichnetesKapital < 25000.0) {
-            addError(result, "gmbh_kapital",
-                     "Gezeichnetes Kapital (" + formatCurrency(bilanz.gezeichnetesKapital) +
-                     " EUR) unter 25.000 EUR. Dieses Tool unterstützt nur GmbH, keine UG (haftungsbeschränkt).");
+        if (stamm.rechtsform != "gmbh" && stamm.rechtsform != "ug") {
+            addError(result, "rechtsform",
+                     "Rechtsform '" + stamm.rechtsform +
+                     "' unbekannt oder leer (erlaubt: GmbH, UG (haftungsbeschränkt)).");
+        } else if (stamm.rechtsform == "gmbh") {
+            if (bilanz.gezeichnetesKapital < 25000.0) {
+                addError(result, "gmbh_kapital",
+                         "Gezeichnetes Kapital (" + formatCurrency(bilanz.gezeichnetesKapital) +
+                         " EUR) unter 25.000 EUR. Eine GmbH benötigt mindestens 25.000 EUR "
+                         "Stammkapital (§ 5 Abs. 1 GmbHG). Für eine UG bitte in der Vorlage "
+                         "als Rechtsform 'UG (haftungsbeschränkt)' wählen.");
+            }
+        } else {
+            if (bilanz.gezeichnetesKapital < 1.0) {
+                addError(result, "ug_kapital",
+                         "Gezeichnetes Kapital (" + formatCurrency(bilanz.gezeichnetesKapital) +
+                         " EUR) unter 1 EUR. Eine UG (haftungsbeschränkt) benötigt mindestens "
+                         "1 EUR Stammkapital (§ 5a Abs. 1 GmbHG).");
+            } else if (bilanz.gezeichnetesKapital >= 25000.0) {
+                addWarning(result, "ug_kapital",
+                           "Gezeichnetes Kapital (" + formatCurrency(bilanz.gezeichnetesKapital) +
+                           " EUR) beträgt 25.000 EUR oder mehr. Damit entfallen die "
+                           "UG-Sonderregeln des § 5a GmbHG; Firmierung und Rechtsform müssen "
+                           "ggf. auf GmbH umgestellt werden.");
+            }
+
+            // Rule 3d: UG-Thesaurierungspflicht (§ 5a Abs. 3 GmbHG) — reiner Hinweis.
+            if (guv.jahresueberschuss > 0.0 &&
+                stamm.ausschuettungsbetrag > 0.75 * guv.jahresueberschuss) {
+                addWarning(result, "ug_ruecklage",
+                           "Geplante Ausschüttung (" + formatCurrency(stamm.ausschuettungsbetrag) +
+                           " EUR) übersteigt drei Viertel des Jahresüberschusses (" +
+                           formatCurrency(guv.jahresueberschuss) +
+                           " EUR). Nach § 5a Abs. 3 GmbHG ist mindestens ein Viertel des um einen "
+                           "Verlustvortrag geminderten Jahresüberschusses in die gesetzliche "
+                           "Rücklage einzustellen. Hinweis, keine Blockade: ein Verlustvortrag "
+                           "kann die Grenze verschieben.");
+            }
         }
     }
 

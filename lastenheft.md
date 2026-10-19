@@ -3,12 +3,12 @@
 ## 1. Projektübersicht
 
 **Projektname:** E-Bilanz Excel Submitter  
-**Version:** 1.1  
-**Datum:** Februar 2026  
-**Auftraggeber:** Solo-GmbH-Unternehmer
+**Version:** 1.2  
+**Datum:** Oktober 2026  
+**Auftraggeber:** Solo-Unternehmer mit kleiner Kapitalgesellschaft (GmbH / UG (haftungsbeschränkt))
 
 ### 1.1 Ausgangssituation
-GmbHs in Deutschland müssen ihre Bilanz elektronisch im XBRL-Format über die ERiC-Schnittstelle ans Finanzamt übermitteln (E-Bilanz-Pflicht). Professionelle Software ist teuer und überdimensioniert für kleine GmbHs mit einfachen Bilanzen.
+Kapitalgesellschaften in Deutschland müssen ihre Bilanz elektronisch im XBRL-Format über die ERiC-Schnittstelle ans Finanzamt übermitteln (E-Bilanz-Pflicht). Professionelle Software ist teuer und überdimensioniert für kleine GmbHs und UGs mit einfachen Bilanzen.
 
 ### 1.2 Zielsetzung
 Entwicklung eines **C++ Command-Line-Tools**, das:
@@ -18,15 +18,15 @@ Entwicklung eines **C++ Command-Line-Tools**, das:
 4. Diese über ERiC-SDK ans Finanzamt übermittelt
 
 ### 1.3 Zielgruppe
-- Solo-Unternehmer mit kleiner GmbH
+- Solo-Unternehmer mit kleiner GmbH oder UG (haftungsbeschränkt)
 - Nutzer mit fertigen Bilanzzahlen
 - Technisch versierte Personen ohne Steuerberater-Software
 
 ### 1.4 Scope
 
 **In Scope:**
-- **Bilanzierungsgröße:** Kleine GmbH (§266 Abs. 1 HGB)
-- **Rechtsform:** Nur GmbH (keine UG, AG, KG, OHG)
+- **Bilanzierungsgröße:** Kleine Kapitalgesellschaft (§266 Abs. 1 HGB)
+- **Rechtsform:** GmbH und UG (haftungsbeschränkt) — beide Rechtsformtyp "KST" nach Technischem Leitfaden zur HGB-Taxonomie, Kap. B.4.1 (keine AG, KG, OHG)
 - **Umfang:** Bilanz + GuV (Gesamtkostenverfahren)
 - **Deployment:** Lokales Tool (keine Cloud, kein Multi-User)
 - **Plattform:** macOS (primär), Windows (sekundär)
@@ -43,7 +43,7 @@ Entwicklung eines **C++ Command-Line-Tools**, das:
 - Ergebnisverwendungsrechnung (wird als vereinfachte Angabe im Stammdaten-Sheet erfasst)
 - Konzernbilanz / Konsolidierung
 - Sonderbilanzen, Eröffnungsbilanzen
-- UG (haftungsbeschränkt), AG oder andere Rechtsformen
+- AG, Personengesellschaften oder andere Rechtsformen außer GmbH und UG (haftungsbeschränkt)
 - Steuerliche Überleitungsrechnung
 - Multi-User / Mandantenfähigkeit
 
@@ -66,7 +66,7 @@ Entwicklung eines **C++ Command-Line-Tools**, das:
 | Steuernummer (bundeseinheitl.)| B3    | 5123045067890             | Auto    | 13-stellig, wird aus B2+B4 berechnet |
 | Finanzamts-Nummer (BuFa-Nr.) | B4    | 2893                      | Ja      | 4-stellig, ELSTER-Verzeichnis     |
 | Firmenname                    | B5    | Muster GmbH               | Ja      |                                   |
-| Rechtsform                    | B6    | GmbH (fest)               | Ja      | Dropdown, nur "GmbH"             |
+| Rechtsform                    | B6    | GmbH                      | Ja      | Dropdown: GmbH / UG (haftungsbeschränkt) |
 | Straße + Hausnummer           | B7    | Musterstraße 123          | Ja      |                                   |
 | PLZ                           | B8    | 12345                     | Ja      | 5 Stellen                        |
 | Ort                           | B9    | Musterstadt               | Ja      |                                   |
@@ -92,7 +92,7 @@ Die bundeseinheitliche 13-stellige Steuernummer (Feld B3) wird automatisch aus d
 **Datenvalidierung in Excel:**
 - B2: Textlänge = 13 Zeichen (Format: XX/XXX/XXXXX)
 - B4: 4-stellige Zahl
-- B6: Dropdown mit "GmbH" (fest)
+- B6: Dropdown mit "GmbH" und "UG (haftungsbeschränkt)"
 - B8: Zahlen, 5 Stellen
 - B11: Text beginnend mit "HRB"
 - B13-B15: Datumsformat
@@ -103,7 +103,7 @@ Die bundeseinheitliche 13-stellige Steuernummer (Feld B3) wird automatisch aus d
 
 #### Sheet 2: Bilanz
 
-**Struktur nach §266 HGB (kleine GmbH):**
+**Struktur nach §266 HGB (kleine Kapitalgesellschaft):**
 
 ```
 | Zeile | Bilanzposition                                              | Betrag (€) | Vorjahr (€) | Zelle |
@@ -275,7 +275,8 @@ Wenn im Stammdaten-Sheet B21 = "Ja" (Erstjahr), werden alle Vorjahres-Spalten (S
 |------------------------------------------|-------------|-----------------------|
 | Aktiva = Passiva                         | =WENN(...)  | Differenz: ...        |
 | Jahresüberschuss Bilanz = GuV            | =WENN(...)  | Differenz: ...        |
-| Gezeichnetes Kapital >= 25.000 EUR (GmbH)| =WENN(...)  | Aktuell: ...          |
+| Rechtsform gültig (GmbH / UG)            | =WENN(...)  | Aktuell: ...          |
+| Gezeichnetes Kapital >= Mindestkapital   | =WENN(...)  | GmbH 25.000 / UG 1 EUR|
 | Steuernummer Format                      | =WENN(...)  | XX/XXX/XXXXX          |
 | BuFa-Nr. Format (4-stellig)             | =WENN(...)  | Aktuell: ...          |
 | Bundeseinh. Steuernr. (13-stellig)      | =WENN(...)  | Aktuell: ...          |
@@ -295,8 +296,11 @@ Wenn im Stammdaten-Sheet B21 = "Ja" (Erstjahr), werden alle Vorjahres-Spalten (S
 // Jahresüberschuss-Check
 =WENN(ABS(Bilanz!C76-GuV!C40)<0.01;"✅ OK";"❌ FEHLER: Jahresüberschuss stimmt nicht überein")
 
-// Kapital-Check (GmbH - Pflicht!)
-=WENN(Bilanz!C67>=25000;"✅ OK";"❌ FEHLER: Gezeichnetes Kapital < 25.000 EUR — Tool unterstützt nur GmbH, keine UG")
+// Rechtsform-Check (B6: GmbH oder UG (haftungsbeschränkt))
+=WENN(ODER(Stammdaten!B6="GmbH";Stammdaten!B6="UG (haftungsbeschränkt)");"✅ OK";"❌ FEHLER: Rechtsform muss GmbH oder UG (haftungsbeschränkt) sein")
+
+// Kapital-Check (rechtsformabhängig: GmbH >= 25.000 EUR, UG >= 1 EUR)
+=WENN(Bilanz!C67>=WENN(Stammdaten!B6="GmbH";25000;1);"✅ OK";"❌ FEHLER: Gezeichnetes Kapital unter dem Mindestkapital der gewählten Rechtsform")
 ```
 
 ---
@@ -397,6 +401,7 @@ struct Stammdaten {
     std::string steuernummerBund;      // Bundeseinheitlich 13-stellig
     std::string finanzamtsNummer;      // BuFa-Nr 4-stellig
     std::string firmenname;
+    std::string rechtsform;            // normalisiert: "gmbh" | "ug"
     std::string strasse;
     std::string plz;
     std::string ort;
@@ -426,6 +431,7 @@ public:
         data.steuernummer = ws.cell("B2").to_string();
         data.finanzamtsNummer = ws.cell("B4").to_string();
         data.firmenname = ws.cell("B5").to_string();
+        data.rechtsform = normalizeRechtsform(ws.cell("B6").to_string());
         // ... etc
         
         // Bundeseinheitliche Steuernummer berechnen/lesen
@@ -502,13 +508,41 @@ public:
             result.isValid = false;
         }
         
-        // 3. Gezeichnetes Kapital (GmbH) — ERROR, nicht Warning!
-        //    Tool unterstützt nur GmbH, daher muss Kapital >= 25.000 EUR sein
-        if (bilanz.gezeichnetesKapital < 25000.0) {
+        // 3. Rechtsform und rechtsformabhängiges Mindestkapital — ERROR, nicht Warning!
+        //    GmbH >= 25.000 EUR (§ 5 Abs. 1 GmbHG), UG >= 1 EUR (§ 5a Abs. 1 GmbHG).
+        //    Bei unbekannter Rechtsform greift nur die Rechtsform-Prüfung.
+        if (stamm.rechtsform != "gmbh" && stamm.rechtsform != "ug") {
             result.errors.push_back(
-                "Gezeichnetes Kapital < 25.000 EUR. "
-                "Dieses Tool unterstützt nur GmbH (nicht UG).");
+                "Rechtsform unbekannt oder leer "
+                "(erlaubt: GmbH, UG (haftungsbeschränkt)).");
             result.isValid = false;
+        } else if (stamm.rechtsform == "gmbh") {
+            if (bilanz.gezeichnetesKapital < 25000.0) {
+                result.errors.push_back(
+                    "Gezeichnetes Kapital < 25.000 EUR. "
+                    "Eine GmbH benötigt mindestens 25.000 EUR (§ 5 Abs. 1 GmbHG).");
+                result.isValid = false;
+            }
+        } else {
+            if (bilanz.gezeichnetesKapital < 1.0) {
+                result.errors.push_back(
+                    "Gezeichnetes Kapital < 1 EUR. "
+                    "Eine UG (haftungsbeschränkt) benötigt mindestens 1 EUR "
+                    "(§ 5a Abs. 1 GmbHG).");
+                result.isValid = false;
+            } else if (bilanz.gezeichnetesKapital >= 25000.0) {
+                result.warnings.push_back(
+                    "Gezeichnetes Kapital >= 25.000 EUR: Die UG-Sonderregeln "
+                    "des § 5a GmbHG entfallen.");
+            }
+
+            // Gesetzliche Rücklage § 5a Abs. 3 GmbHG — reiner Hinweis
+            if (guv.jahresueberschuss > 0.0 &&
+                stamm.ausschuettungsbetrag > 0.75 * guv.jahresueberschuss) {
+                result.warnings.push_back(
+                    "Geplante Ausschüttung übersteigt drei Viertel des "
+                    "Jahresüberschusses (§ 5a Abs. 3 GmbHG).");
+            }
         }
         
         // 4. Formale Checks
@@ -916,7 +950,7 @@ ebilanz-tool/
 - [ ] Steuernummer-Konvertierung implementieren + Tests
 - [ ] Excel-Template erstellen (alle 5 Sheets)
 - [ ] Excel-Parser implementieren (inkl. Vorjahreswerte)
-- [ ] Basis-Validierung (alle Checks inkl. GmbH-Kapital als Error)
+- [ ] Basis-Validierung (alle Checks inkl. Rechtsform + rechtsformabhängigem Kapital als Error)
 - [ ] Unit-Tests für Parser + Validator
 
 **Deliverable:** Excel einlesen + vollständige Validierung
@@ -988,14 +1022,37 @@ TEST_CASE("Validator: Bilanz nicht ausgeglichen") {
 }
 
 TEST_CASE("Validator: GmbH-Kapital unter 25.000 EUR ist ERROR") {
+    Stammdaten stamm = createTestStammdaten();  // rechtsform = "gmbh"
     BilanzData bilanz = createBalancedTestBilanz();
-    bilanz.gezeichnetesKapital = 12500.0;  // UG-Kapital
-    
+    bilanz.gezeichnetesKapital = 12500.0;
+
     Validator validator;
-    auto result = validator.validate(createTestStammdaten(), bilanz, createTestGuV());
-    
+    auto result = validator.validate(stamm, bilanz, createTestGuV());
+
     REQUIRE(result.isValid == false);  // Error, nicht Warning!
     REQUIRE_THAT(result.errors[0], Catch::Matchers::ContainsSubstring("25.000"));
+}
+
+TEST_CASE("Validator: UG-Kapital ab 1 EUR ist gültig") {
+    Stammdaten stamm = createTestStammdaten();
+    stamm.rechtsform = "ug";
+    BilanzData bilanz = createBalancedTestBilanz();
+    bilanz.gezeichnetesKapital = 1.0;  // § 5a Abs. 1 GmbHG
+
+    Validator validator;
+    auto result = validator.validate(stamm, bilanz, createTestGuV());
+
+    REQUIRE(result.isValid == true);
+}
+
+TEST_CASE("Validator: unbekannte Rechtsform ist ERROR") {
+    Stammdaten stamm = createTestStammdaten();
+    stamm.rechtsform = "ag";
+
+    Validator validator;
+    auto result = validator.validate(stamm, createBalancedTestBilanz(), createTestGuV());
+
+    REQUIRE(result.isValid == false);
 }
 
 // test_steuernummer.cpp
@@ -1378,7 +1435,7 @@ Bei jährlichen Taxonomie-Updates:
 
 ✅ **Beantwortet:**
 - Bilanzierungsgröße: Klein
-- Rechtsform: Nur GmbH
+- Rechtsform: GmbH und UG (haftungsbeschränkt), beide Typ "KST" (keine AG, keine Personengesellschaften)
 - Anhang/Lagebericht: Nein (explizit Out of Scope)
 - Ergebnisverwendung: Vereinfacht über Stammdaten-Feld
 - Deployment: Lokal, Desktop-only
@@ -1484,3 +1541,4 @@ Die Konvertierung von vereinfachter → bundeseinheitlicher Steuernummer ist Bun
 |---------|-------|------------|
 | 1.0 | 08.02.2026 | Initiale Version basierend auf echter Bilanz |
 | 1.1 | 08.02.2026 | Bundeseinheitliche Steuernummer + BuFa-Nr; Taxonomie konfigurierbar; ERiC-Code als Pseudocode markiert; Erstjahr-Handling + prior-Context; Ergebnisverwendung (Sheet 5: Info); Auffangpositionen-Logik; CLI: --version, --verbose, --quiet, --log, --xbrl; Scope-Abgrenzung verschärft (explizites Out of Scope); Retry-Mechanismus (--xbrl); Logging-Konzept mit spdlog; GmbH-Kapital-Check als Error statt Warning; Windows readPassword(); Transfer-History; Phasen-Checkmarks zurückgesetzt |
+| 1.2 | 19.10.2026 | UG (haftungsbeschränkt) unterstützt: Rechtsform-Feld B6 (Dropdown GmbH / UG), rechtsformabhängiges Mindestkapital (GmbH 25.000 EUR, UG 1 EUR), Warnungen `ug_kapital` (ab 25.000 EUR) und `ug_ruecklage` (§ 5a Abs. 3 GmbHG), legalStatus-Element GMBH/UG in der XBRL-Generierung |

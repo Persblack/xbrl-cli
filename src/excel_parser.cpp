@@ -84,6 +84,23 @@ bool readBool(xlnt::worksheet& ws, const std::string& cellRef) {
             lower == "wahr");
 }
 
+// Normalize rechtsform to internal format
+// Template cell B6 offers "GmbH" and "UG (haftungsbeschränkt)"
+std::string normalizeRechtsform(const std::string& val) {
+    std::string lower = val;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+
+    // "gmbh" first: text like "Komplementaer GmbH" must never fall through to UG
+    if (lower.find("gmbh") != std::string::npos) return "gmbh";
+    // No bare find("ug"): company names like "Zugspitz AG" must not match
+    if (lower.find("unternehmergesellschaft") != std::string::npos ||
+        lower == "ug" || lower.rfind("ug ", 0) == 0 || lower.rfind("ug(", 0) == 0) {
+        return "ug";
+    }
+    return lower;
+}
+
 // Normalize ergebnisverwendung to internal format
 std::string normalizeErgebnisverwendung(const std::string& val) {
     std::string lower = val;
@@ -122,7 +139,7 @@ Stammdaten ExcelParser::readStammdaten(const std::string& filepath,
     data.steuernummerBund = readString(ws, "B3");
     data.finanzamtsNummer = readString(ws, "B4");
     data.firmenname = readString(ws, "B5");
-    // B6 = Rechtsform (always GmbH, not stored separately)
+    data.rechtsform = normalizeRechtsform(readString(ws, "B6"));
     data.strasse = readString(ws, "B7");
     data.plz = readString(ws, "B8");
     data.ort = readString(ws, "B9");

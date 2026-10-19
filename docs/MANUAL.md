@@ -26,7 +26,7 @@
 
 ## Übersicht
 
-`ebilanz-submit` ist ein CLI-Tool für die elektronische Übermittlung von GmbH-Bilanzen (E-Bilanz) an das deutsche Finanzamt über die ELSTER-Schnittstelle.
+`ebilanz-submit` ist ein CLI-Tool für die elektronische Übermittlung von Bilanzen kleiner Kapitalgesellschaften (GmbH, UG (haftungsbeschränkt)) an das deutsche Finanzamt über die ELSTER-Schnittstelle.
 
 **Was es kann:**
 - Bilanzdaten aus einer Excel-Vorlage (.xlsx) einlesen
@@ -35,7 +35,7 @@
 - Über das ERiC-SDK (ELSTER) ans Finanzamt senden
 
 **Scope:**
-- Nur GmbH (keine UG/AG)
+- GmbH und UG (haftungsbeschränkt) — keine AG, keine Personengesellschaften
 - Bilanz + GuV (Gesamtkostenverfahren)
 - Keine Kapitalflussrechnung, kein Anhang, kein Lagebericht
 - Einheitsbilanz (Handelsbilanz = Steuerbilanz)
@@ -132,7 +132,7 @@ Unternehmensdaten in Spalte B:
 | B3 | Steuernummer bundeseinheitlich | ja | 13 Ziffern |
 | B4 | Finanzamtsnummer (BuFa) | ja | 4 Ziffern |
 | B5 | Firmenname | ja | Freitext |
-| B6 | Rechtsform | ja | `GmbH` |
+| B6 | Rechtsform | ja | `GmbH` oder `UG (haftungsbeschränkt)` |
 | B7 | Straße | ja | Freitext |
 | B8 | PLZ | ja | 5 Ziffern |
 | B9 | Ort | ja | Freitext |
@@ -504,7 +504,7 @@ Alle Regeln werden in Schritt 2 der Pipeline geprüft. Fehler (ERROR) brechen de
 |---|-------|-----|-----------|
 | 1 | Bilanz ausgeglichen | ERROR | \|Aktiva − Passiva\| < 0,01 EUR |
 | 2 | Jahresüberschuss konsistent | ERROR | \|Bilanz-JÜ − GuV-JÜ\| < 0,01 EUR |
-| 3 | GmbH-Stammkapital | ERROR | Gezeichnetes Kapital ≥ 25.000 EUR |
+| 3 | Rechtsform & Mindestkapital | ERROR / WARNING | GmbH ≥ 25.000 EUR, UG (haftungsbeschränkt) ≥ 1 EUR |
 | 4 | Steuernummer-Format | ERROR | Regex `\d{2}/\d{3}/\d{5}` |
 | 5 | BuFa-Nummer | ERROR | Regex `\d{4}` |
 | 6 | Bundeseinheitl. Steuernummer | ERROR | 13 Ziffern |
@@ -515,7 +515,12 @@ Alle Regeln werden in Schritt 2 der Pipeline geprüft. Fehler (ERROR) brechen de
 | 11 | Wirtschaftsjahr-Dauer | WARNING | ≤ 18 Monate |
 | 12 | Bilanzstichtag | ERROR | Muss = Wirtschaftsjahr-Ende |
 
-**Hinweis:** Regel 3 ist bewusst als ERROR implementiert. Das Tool unterstützt nur GmbH (Stammkapital ≥ 25.000 EUR), keine UG.
+**Hinweis zu Regel 3:** Die Rechtsform stammt aus Stammdaten B6 und steuert die Kapitalprüfung:
+
+- `rechtsform` — ERROR, wenn B6 leer oder unbekannt ist (erlaubt: `GmbH`, `UG (haftungsbeschränkt)`). In diesem Fall wird keine Kapitalprüfung durchgeführt.
+- `gmbh_kapital` — ERROR, wenn GmbH und gezeichnetes Kapital < 25.000 EUR (§ 5 Abs. 1 GmbHG).
+- `ug_kapital` — ERROR, wenn UG und gezeichnetes Kapital < 1 EUR (§ 5a Abs. 1 GmbHG); WARNING ab 25.000 EUR, da die Sonderregeln des § 5a GmbHG dann nicht mehr gelten.
+- `ug_ruecklage` — WARNING, wenn bei einer UG die geplante Ausschüttung mehr als 75 % des Jahresüberschusses beträgt (gesetzliche Rücklage nach § 5a Abs. 3 GmbHG). Hinweis, keine Blockade — ein Verlustvortrag kann die Grenze verschieben.
 
 ---
 
@@ -579,6 +584,8 @@ fi
   - Steuernummer im falschen Format (richtig: `12/345/67890`)
   - Handelsregisternummer ohne „HRB" Präfix
   - Ausschüttungsbetrag fehlt bei Ergebnisverwendung „ausschuettung"
+  - Rechtsform in B6 leer oder unbekannt (erlaubt: `GmbH`, `UG (haftungsbeschränkt)`)
+  - Gezeichnetes Kapital unter dem Mindestkapital der Rechtsform (GmbH 25.000 EUR, UG 1 EUR)
 
 ### „ERiC-SDK nicht verfügbar"
 

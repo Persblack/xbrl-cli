@@ -30,6 +30,7 @@ struct Stammdaten {
     std::string steuernummerBund;      // Bundeseinheitlich: 13-stellig
     std::string finanzamtsNummer;      // BuFa-Nr: 4-stellig
     std::string firmenname;
+    std::string rechtsform;            // "gmbh" | "ug"
     std::string strasse;
     std::string plz;
     std::string ort;

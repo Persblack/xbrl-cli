@@ -20,18 +20,18 @@ And there is no manual way to do it. Unlike an income-tax return, the E-Bilanz *
 
 A legal requirement should not be paywalled. `ebilanz-submit` is the missing free path: it drives the same official, free ERiC interface from a simple Excel template, on your own machine — so a small, owner-run company can file its own E-Bilanz without paying anyone, and without its financial data ever leaving the building.
 
-> **Scope:** GmbH (§266 Abs. 1 HGB), balance sheet + P&L (Gesamtkostenverfahren). No cash-flow statement, notes, or management report — deliberately focused on the simple balance sheets of small companies. Contributions extending the scope are welcome.
+> **Scope:** GmbH and UG (haftungsbeschränkt) (§266 Abs. 1 HGB), balance sheet + P&L (Gesamtkostenverfahren). No cash-flow statement, notes, or management report — deliberately focused on the simple balance sheets of small companies. Contributions extending the scope are welcome.
 
 ---
 
 ## Für wen ist das Tool?
 
-- **Solo-Unternehmer mit kleiner GmbH** (§266 Abs. 1 HGB)
+- **Solo-Unternehmer mit kleiner GmbH oder UG (haftungsbeschränkt)** (§266 Abs. 1 HGB)
 - Die **keine teure Steuerberater-Software** benötigen
 - Die ihre **E-Bilanz selbst erstellen** und übermitteln möchten
 
 **Scope:**
-- ✅ Nur GmbH (keine UG/AG)
+- ✅ GmbH und UG (haftungsbeschränkt) — keine AG, keine Personengesellschaften
 - ✅ Bilanz + GuV (Gesamtkostenverfahren)
 - ❌ Keine Kapitalflussrechnung
 - ❌ Kein Anhang, kein Lagebericht
@@ -91,7 +91,7 @@ Nutze `templates/ebilanz-template.xlsx`:
 Prüft:
 - ✅ Bilanz ausgeglichen (Aktiva = Passiva)
 - ✅ Jahresüberschuss konsistent (Bilanz = GuV)
-- ✅ Stammkapital ≥ 25.000 EUR (GmbH)
+- ✅ Gezeichnetes Kapital passend zur Rechtsform (GmbH ≥ 25.000 EUR, UG ≥ 1 EUR)
 - ✅ Steuernummer-Format korrekt
 - ✅ Alle Pflichtfelder vorhanden
 
@@ -280,7 +280,7 @@ Das Tool prüft automatisch:
 |---|-------|-----|-----------|
 | 1 | Bilanz ausgeglichen | ERROR | \|Aktiva - Passiva\| < 0,01 € |
 | 2 | Jahresüberschuss konsistent | ERROR | \|Bilanz.JÜ - GuV.JÜ\| < 0,01 € |
-| 3 | GmbH-Kapital | ERROR | Stammkapital ≥ 25.000 € |
+| 3 | Rechtsform & Mindestkapital | ERROR / WARNING | `GmbH` ≥ 25.000 €, `UG (haftungsbeschränkt)` ≥ 1 € |
 | 4 | Steuernummer Format | ERROR | Pattern: `XX/XXX/XXXXX` |
 | 5 | BuFa-Nummer | ERROR | 4-stellig numerisch |
 | 6 | Bundeseinh. Steuernummer | ERROR | 13-stellig numerisch |
@@ -290,6 +290,13 @@ Das Tool prüft automatisch:
 | 10 | Ergebnisverwendung | ERROR | Ausschüttung > 0 wenn nicht Thesaurierung |
 | 11 | Wirtschaftsjahr | WARNING | Dauer ≤ 18 Monate |
 | 12 | Bilanzstichtag | ERROR | = Wirtschaftsjahr-Ende |
+
+**Regel 3 im Detail** (Rechtsform aus Stammdaten B6):
+
+- `rechtsform` — ERROR, wenn B6 leer oder unbekannt ist (erlaubt: `GmbH`, `UG (haftungsbeschränkt)`). Dann greift keine Kapitalprüfung.
+- `gmbh_kapital` — ERROR, wenn GmbH und gezeichnetes Kapital < 25.000 € (§ 5 Abs. 1 GmbHG).
+- `ug_kapital` — ERROR, wenn UG und gezeichnetes Kapital < 1 € (§ 5a Abs. 1 GmbHG); WARNING ab 25.000 €, weil dann die Sonderregeln des § 5a GmbHG entfallen.
+- `ug_ruecklage` — WARNING, wenn bei einer UG die geplante Ausschüttung mehr als 75 % des Jahresüberschusses beträgt (gesetzliche Rücklage nach § 5a Abs. 3 GmbHG). Reiner Hinweis, keine Blockade.
 
 ---
 
@@ -355,9 +362,12 @@ ctest --output-on-failure
 → Prüfe Excel: Summe Aktiva muss exakt Summe Passiva entsprechen
 → Nutze Sheet "Validierung" für automatische Checks
 
-### "Stammkapital < 25.000 EUR"
-→ Dieses Tool ist nur für GmbH (nicht UG)
-→ GmbH benötigt mindestens 25.000 € Stammkapital
+### "Gezeichnetes Kapital ... unter 25.000 EUR"
+→ Eine GmbH benötigt mindestens 25.000 € Stammkapital (§ 5 Abs. 1 GmbHG)
+→ Bei einer UG: in Stammdaten B6 `UG (haftungsbeschränkt)` wählen — dann gilt 1 € als Untergrenze
+
+### "Rechtsform ... unbekannt oder leer"
+→ Zelle B6 im Sheet "Stammdaten" akzeptiert nur `GmbH` oder `UG (haftungsbeschränkt)`
 
 ---
 
@@ -365,7 +375,7 @@ ctest --output-on-failure
 
 Contributions are very welcome — this tool exists to save small companies money, and every improvement compounds across everyone who uses it. Good places to start:
 
-- **Broaden the scope:** UG (haftungsbeschränkt) and other legal forms, or balance-sheet positions not yet mapped.
+- **Broaden the scope:** further legal forms (AG, Personengesellschaften), or balance-sheet positions not yet mapped.
 - **Annual taxonomy updates:** the HGB taxonomy changes most years; the mapping is data, not code — see `config/taxonomie-6.8.json`.
 - **Cross-platform:** Windows/Linux build and packaging (the core is portable C++17; only password entry and the ERiC setup are platform-specific).
 - **Tests** for new validation rules or taxonomy positions.
@@ -384,7 +394,7 @@ MIT License — siehe LICENSE-Datei
 
 ## Credits
 
-Entwickelt für Solo-GmbH-Unternehmer, die die Kontrolle über ihre E-Bilanz behalten möchten.
+Entwickelt für Solo-Unternehmer mit GmbH oder UG (haftungsbeschränkt), die die Kontrolle über ihre E-Bilanz behalten möchten.
 
 **Dependencies:**
 - [xlnt](https://github.com/tfussell/xlnt) — Excel-Verarbeitung

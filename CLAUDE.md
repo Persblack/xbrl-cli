@@ -7,11 +7,11 @@
 
 ## Projekt-Überblick
 
-**Was:** Ein C++17 CLI-Tool (`ebilanz-submit`) das GmbH-Bilanzdaten aus einem Excel-Template liest, validiert, eine XBRL-Datei nach HGB-Taxonomie generiert und über das ERiC-SDK (ELSTER) ans deutsche Finanzamt übermittelt.
+**Was:** Ein C++17 CLI-Tool (`ebilanz-submit`) das Bilanzdaten einer kleinen Kapitalgesellschaft (GmbH oder UG (haftungsbeschränkt)) aus einem Excel-Template liest, validiert, eine XBRL-Datei nach HGB-Taxonomie generiert und über das ERiC-SDK (ELSTER) ans deutsche Finanzamt übermittelt.
 
-**Für wen:** Solo-Unternehmer mit kleiner GmbH (§266 Abs. 1 HGB), die keine teure Steuerberater-Software benötigen.
+**Für wen:** Solo-Unternehmer mit kleiner GmbH oder UG (haftungsbeschränkt) (§266 Abs. 1 HGB), die keine teure Steuerberater-Software benötigen.
 
-**Scope:** Nur GmbH (keine UG/AG), nur Bilanz + GuV (Gesamtkostenverfahren), keine Kapitalflussrechnung, kein Anhang, kein Lagebericht. Ausführliches Lastenheft: `docs/lastenheft-ebilanz-cli-tool.md`
+**Scope:** GmbH und UG (haftungsbeschränkt) — beide Rechtsformtyp "KST" (Technischer Leitfaden HGB-Taxonomie, Kap. B.4.1) —, keine AG und keine Personengesellschaften; nur Bilanz + GuV (Gesamtkostenverfahren), keine Kapitalflussrechnung, kein Anhang, kein Lagebericht. Ausführliches Lastenheft: `docs/lastenheft-ebilanz-cli-tool.md`
 
 ---
 
@@ -153,6 +153,7 @@ struct Stammdaten {
     std::string steuernummerBund;      // Bundeseinheitlich: 13-stellig
     std::string finanzamtsNummer;      // BuFa-Nr: 4-stellig
     std::string firmenname;
+    std::string rechtsform;            // "gmbh" | "ug"
     std::string strasse;
     std::string plz;
     std::string ort;
@@ -201,7 +202,7 @@ Diese Regeln MÜSSEN alle implementiert sein. Wenn du eine Validierung änderst,
 |---|---|---|---|
 | 1 | Bilanz ausgeglichen | ERROR | `abs(summeAktiva - summePassiva) < 0.01` |
 | 2 | Jahresüberschuss konsistent | ERROR | `abs(bilanz.jahresueberschuss - guv.jahresueberschuss) < 0.01` |
-| 3 | GmbH-Kapital | ERROR | `gezeichnetesKapital >= 25000.0` (NICHT Warning — UG nicht unterstützt) |
+| 3 | Rechtsform & Mindestkapital | ERROR / WARNING | `rechtsform` ∈ {`"gmbh"`, `"ug"`}, sonst ERROR und keine Kapitalprüfung; `"gmbh"` → `gezeichnetesKapital >= 25000.0` (ERROR, § 5 Abs. 1 GmbHG); `"ug"` → `>= 1.0` (ERROR, § 5a Abs. 1 GmbHG) und WARNING ab `25000.0`; `"ug"` + `ausschuettungsbetrag > 0.75 * guv.jahresueberschuss` → WARNING (§ 5a Abs. 3 GmbHG) |
 | 4 | Steuernummer Format | ERROR | Regex `\d{2}/\d{3}/\d{5}` |
 | 5 | BuFa-Nummer | ERROR | Regex `\d{4}` |
 | 6 | Bundeseinh. Steuernummer | ERROR | 13-stellig numerisch |
@@ -211,6 +212,8 @@ Diese Regeln MÜSSEN alle implementiert sein. Wenn du eine Validierung änderst,
 | 10 | Ergebnisverwendung | ERROR | Ausschüttungsbetrag > 0 wenn nicht Thesaurierung |
 | 11 | Wirtschaftsjahr Dauer | WARNING | ≤ 18 Monate |
 | 12 | Bilanzstichtag | ERROR | Muss = Wirtschaftsjahr-Ende |
+
+Regel-IDs (werden in den Tests wörtlich geprüft): `rechtsform`, `gmbh_kapital`, `ug_kapital`, `ug_ruecklage`. Die Rechtsform kommt normalisiert als `"gmbh"` / `"ug"` aus `excel_parser.cpp` (Stammdaten B6: `GmbH` bzw. `UG (haftungsbeschränkt)`) und steuert in `xbrl_generator.cpp` das legalStatus-Element (`...legalStatus.legalStatus.GMBH` / `...legalStatus.legalStatus.UG`).
 
 ---
 

@@ -165,6 +165,95 @@ void createErstjahrBilanz(const std::string& path) {
     std::cout << "Erstellt: " << path << "\n";
 }
 
+void createUGBilanz(const std::string& path) {
+    xlnt::workbook wb;
+
+    // ── Stammdaten ──
+    auto ws = wb.active_sheet();
+    ws.title("Stammdaten");
+    ws.cell("B2").value("12/345/67890");
+    ws.cell("B3").value("5123045067890");
+    ws.cell("B4").value("2893");
+    ws.cell("B5").value("Muster UG (haftungsbeschränkt)");
+    ws.cell("B6").value("UG (haftungsbeschränkt)");
+    ws.cell("B7").value("Musterstraße 123");
+    ws.cell("B8").value("12345");
+    ws.cell("B9").value("Musterstadt");
+    ws.cell("B10").value("Max Mustermann");
+    ws.cell("B11").value("HRB 12345");
+    ws.cell("B12").value("Amtsgericht Musterstadt");
+    ws.cell("B13").value("01.01.2024");
+    ws.cell("B14").value("31.12.2024");
+    ws.cell("B15").value("31.12.2024");
+    ws.cell("B16").value("62.01");
+    ws.cell("B17").value("+49 123 456789");
+    ws.cell("B18").value("info@beispiel.de");
+    ws.cell("B19").value("Erstmalig");
+    ws.cell("B20").value("Handelsrecht");
+    ws.cell("B21").value("Nein");
+    ws.cell("B22").value("Thesaurierung");
+    ws.cell("B23").value(0.0);
+
+    // ── Bilanz ──
+    auto bilanz = wb.create_sheet();
+    bilanz.title("Bilanz");
+
+    std::string cols[] = {"C", "D"};
+    for (const auto& col : cols) {
+        for (int r = 6; r <= 100; ++r) {
+            bilanz.cell(col + std::to_string(r)).value(0.0);
+        }
+    }
+
+    // Aktiva
+    bilanz.cell("C53").value(6000.0);      // Kassenbestand
+    bilanz.cell("C55").value(6000.0);      // Summe Umlaufvermögen
+    bilanz.cell("C61").value(6000.0);      // SUMME AKTIVA
+
+    // Passiva — UG: 1.000 EUR Stammkapital (>= 1 EUR, § 5a Abs. 1 GmbHG)
+    bilanz.cell("C67").value(1000.0);      // Gezeichnetes Kapital
+    bilanz.cell("C68").value(0.0);         // Ausstehende Einlagen (nicht eingefordert)
+    bilanz.cell("C69").value(0.0);         // Kapitalrücklage
+    bilanz.cell("C70").value(500.0);       // Gesetzliche Rücklage (§ 5a Abs. 3 GmbHG)
+    bilanz.cell("C76").value(2000.0);      // Jahresüberschuss
+    bilanz.cell("C78").value(3500.0);      // Summe Eigenkapital
+    bilanz.cell("C94").value(2500.0);      // Sonstige Verbindlichkeiten
+    bilanz.cell("C95").value(2500.0);      // Summe Verbindlichkeiten
+    bilanz.cell("C100").value(6000.0);     // SUMME PASSIVA
+
+    // Vorjahr (non-Erstjahr)
+    bilanz.cell("D53").value(1500.0);      // Kassenbestand VJ
+    bilanz.cell("D55").value(1500.0);      // Umlaufvermögen VJ
+    bilanz.cell("D61").value(1500.0);      // Aktiva VJ
+    bilanz.cell("D67").value(1000.0);      // Gezeichnetes Kapital VJ
+    bilanz.cell("D70").value(500.0);       // Gesetzliche Rücklage VJ
+    bilanz.cell("D78").value(1500.0);      // Eigenkapital VJ
+    bilanz.cell("D100").value(1500.0);     // Passiva VJ
+
+    // ── GuV ──
+    auto guv = wb.create_sheet();
+    guv.title("GuV");
+
+    for (const auto& col : cols) {
+        for (int r = 3; r <= 40; ++r) {
+            guv.cell(col + std::to_string(r)).value(0.0);
+        }
+    }
+
+    guv.cell("C3").value(10000.0);         // Umsatzerlöse
+    guv.cell("C23").value(8000.0);         // Sonstige betriebliche Aufwendungen
+    guv.cell("C31").value(2000.0);         // Ergebnis gewöhnliche Geschäftstätigkeit
+    guv.cell("C40").value(2000.0);         // Jahresüberschuss
+
+    wb.save(path);
+    std::cout << "Erstellt: " << path << "\n";
+}
+
+// ACHTUNG: xlnt kann keine Data Validations schreiben (der Reader überspringt
+// <dataValidations> beim Lesen lediglich, einen Writer dafür gibt es nicht).
+// Das hier erzeugte Template enthält daher KEIN Rechtsform-Dropdown auf
+// Stammdaten!B6. Nach jeder Neuerzeugung des ausgelieferten Templates MUSS
+// deshalb `python scripts/add_rechtsform_dropdown.py` erneut ausgeführt werden.
 void createTemplate(const std::string& path) {
     xlnt::workbook wb;
 
@@ -493,10 +582,14 @@ int main() {
 
     createValidBilanz(dir + "/test-bilanz.xlsx");
     createErstjahrBilanz(dir + "/test-bilanz-erstjahr.xlsx");
+    createUGBilanz(dir + "/test-bilanz-ug.xlsx");
     createInvalidBilanz(dir + "/test-bilanz-invalid.xlsx");
     createTemplate(templateDir + "/ebilanz-template.xlsx");
 
     std::cout << "\nAlle Test-Dateien erfolgreich erstellt in: " << dir << "\n";
     std::cout << "Template erstellt in: " << templateDir << "\n";
+    std::cout << "\nHinweis: Bitte jetzt 'python scripts/add_rechtsform_dropdown.py' "
+              << "ausführen,\n         damit das Rechtsform-Dropdown "
+              << "(GmbH / UG (haftungsbeschränkt)) wiederhergestellt wird.\n";
     return 0;
 }

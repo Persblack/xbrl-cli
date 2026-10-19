@@ -273,6 +273,10 @@ TEST_CASE("ExcelParser: Stammdaten lesen") {
         REQUIRE(stamm.uebermittlungsanlass == "erstmalig");
     }
 
+    SECTION("Rechtsform normalized") {
+        REQUIRE(stamm.rechtsform == "gmbh");
+    }
+
     // Cleanup
     fs::remove(path);
 }
@@ -360,6 +364,71 @@ TEST_CASE("ExcelParser: Bilanz und GuV Jahresüberschuss konsistent") {
     REQUIRE(std::abs(bilanz.jahresueberschuss - guv.jahresueberschuss) < 0.01);
 
     fs::remove(path);
+}
+
+// ── Test Helper: Minimal Stammdaten sheet with a given Rechtsform in B6 ─────
+
+static std::string createRechtsformTestXlsx(const std::string& b6, const std::string& name) {
+    std::string dir = getTestDataDir();
+    std::string path = dir + "/test-rechtsform-" + name + ".xlsx";
+
+    xlnt::workbook wb;
+
+    auto ws = wb.active_sheet();
+    ws.title("Stammdaten");
+    ws.cell("B2").value("12/345/67890");
+    ws.cell("B3").value("5123045067890");
+    ws.cell("B4").value("2893");
+    ws.cell("B5").value("Test Gesellschaft");
+    ws.cell("B6").value(b6);
+    ws.cell("B7").value("Teststraße 1");
+    ws.cell("B8").value("12345");
+    ws.cell("B9").value("Teststadt");
+    ws.cell("B10").value("Max Test");
+    ws.cell("B11").value("HRB 99999");
+    ws.cell("B12").value("AG Teststadt");
+    ws.cell("B13").value("01.01.2024");
+    ws.cell("B14").value("31.12.2024");
+    ws.cell("B15").value("31.12.2024");
+    ws.cell("B19").value("Erstmalig");
+    ws.cell("B21").value("Ja");
+    ws.cell("B22").value("Thesaurierung");
+    ws.cell("B23").value(0.0);
+
+    wb.save(path);
+    return path;
+}
+
+TEST_CASE("ExcelParser: Rechtsform aus B6") {
+    BufaVerzeichnis bufa;
+    bufa.prefixMap["28"] = {"baden_wuerttemberg", "standard"};
+
+    ExcelParser parser;
+
+    SECTION("UG (haftungsbeschränkt) — Vorlagenwert") {
+        std::string path = createRechtsformTestXlsx("UG (haftungsbeschränkt)", "ug-template");
+        REQUIRE(parser.readStammdaten(path, bufa).rechtsform == "ug");
+        fs::remove(path);
+    }
+
+    SECTION("ug — Kleinschreibung") {
+        std::string path = createRechtsformTestXlsx("ug", "ug-lower");
+        REQUIRE(parser.readStammdaten(path, bufa).rechtsform == "ug");
+        fs::remove(path);
+    }
+
+    SECTION("Unternehmergesellschaft (haftungsbeschränkt) — ausgeschrieben") {
+        std::string path = createRechtsformTestXlsx("Unternehmergesellschaft (haftungsbeschränkt)",
+                                                    "ug-long");
+        REQUIRE(parser.readStammdaten(path, bufa).rechtsform == "ug");
+        fs::remove(path);
+    }
+
+    SECTION("Leer — bleibt leer (Validator meldet den Fehler)") {
+        std::string path = createRechtsformTestXlsx("", "leer");
+        REQUIRE(parser.readStammdaten(path, bufa).rechtsform == "");
+        fs::remove(path);
+    }
 }
 
 // ── Test Helper: Create xlsx with ausstehende Einlagen ───────────────────────

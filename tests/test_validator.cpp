@@ -11,6 +11,7 @@ static Stammdaten createValidStammdaten() {
     s.steuernummerBund = "1234567890123";
     s.finanzamtsNummer = "1234";
     s.firmenname = "Test GmbH";
+    s.rechtsform = "gmbh";
     s.strasse = "Musterstr. 1";
     s.plz = "12345";
     s.ort = "Berlin";
@@ -126,7 +127,7 @@ TEST_CASE("Validator: GmbH-Kapital") {
         REQUIRE_FALSE(hasKapitalError);
     }
 
-    SECTION("Unter 25.000 — ERROR (UG nicht unterstützt)") {
+    SECTION("GmbH unter 25.000 — ERROR") {
         auto bilanz = createBalancedBilanz();
         bilanz.gezeichnetesKapital = 12500.0;
         auto result = v.validate(stamm, bilanz, guv);
@@ -138,11 +139,158 @@ TEST_CASE("Validator: GmbH-Kapital") {
         REQUIRE(hasKapitalError);
     }
 
-    SECTION("1 EUR UG — ERROR") {
+    SECTION("GmbH mit 1 EUR — ERROR") {
         auto bilanz = createBalancedBilanz();
         bilanz.gezeichnetesKapital = 1.0;
         auto result = v.validate(stamm, bilanz, guv);
         REQUIRE_FALSE(result.isValid);
+        bool hasKapitalError = false;
+        for (const auto& e : result.errors) {
+            if (e.rule == "gmbh_kapital") hasKapitalError = true;
+        }
+        REQUIRE(hasKapitalError);
+    }
+}
+
+// ── Rule 3b: UG-Kapital >= 1 ─────────────────────────────────────────────────
+
+TEST_CASE("Validator: UG-Kapital") {
+    Validator v;
+    auto stamm = createValidStammdaten();
+    stamm.rechtsform = "ug";
+    auto guv = createMatchingGuV();
+
+    SECTION("1 EUR — OK") {
+        auto bilanz = createBalancedBilanz();
+        bilanz.gezeichnetesKapital = 1.0;
+        auto result = v.validate(stamm, bilanz, guv);
+        REQUIRE(result.isValid);
+        REQUIRE(result.errors.empty());
+    }
+
+    SECTION("12.500 EUR — OK") {
+        auto bilanz = createBalancedBilanz();
+        bilanz.gezeichnetesKapital = 12500.0;
+        auto result = v.validate(stamm, bilanz, guv);
+        REQUIRE(result.isValid);
+        REQUIRE(result.errors.empty());
+    }
+
+    SECTION("0 EUR — ERROR") {
+        auto bilanz = createBalancedBilanz();
+        bilanz.gezeichnetesKapital = 0.0;
+        auto result = v.validate(stamm, bilanz, guv);
+        REQUIRE_FALSE(result.isValid);
+        bool hasKapitalError = false;
+        for (const auto& e : result.errors) {
+            if (e.rule == "ug_kapital") hasKapitalError = true;
+        }
+        REQUIRE(hasKapitalError);
+    }
+
+    SECTION("30.000 EUR — WARNING (Umfirmierung zur GmbH möglich)") {
+        auto bilanz = createBalancedBilanz();
+        bilanz.gezeichnetesKapital = 30000.0;
+        auto result = v.validate(stamm, bilanz, guv);
+        REQUIRE(result.errors.empty());
+        bool hasKapitalWarning = false;
+        for (const auto& w : result.warnings) {
+            if (w.rule == "ug_kapital") hasKapitalWarning = true;
+        }
+        REQUIRE(hasKapitalWarning);
+    }
+}
+
+// ── Rule 3c: Rechtsform bekannt ──────────────────────────────────────────────
+
+TEST_CASE("Validator: Rechtsform") {
+    Validator v;
+    auto bilanz = createBalancedBilanz();
+    auto guv = createMatchingGuV();
+
+    SECTION("Leer — ERROR, keine Kapitalregel") {
+        auto stamm = createValidStammdaten();
+        stamm.rechtsform = "";
+        auto result = v.validate(stamm, bilanz, guv);
+        REQUIRE_FALSE(result.isValid);
+        REQUIRE(result.errors.size() == 1);
+        REQUIRE(result.errors[0].rule == "rechtsform");
+        for (const auto& w : result.warnings) {
+            REQUIRE(w.rule != "gmbh_kapital");
+            REQUIRE(w.rule != "ug_kapital");
+        }
+    }
+
+    SECTION("Unbekannt ('ag') — ERROR, keine Kapitalregel") {
+        auto stamm = createValidStammdaten();
+        stamm.rechtsform = "ag";
+        auto result = v.validate(stamm, bilanz, guv);
+        REQUIRE_FALSE(result.isValid);
+        REQUIRE(result.errors.size() == 1);
+        REQUIRE(result.errors[0].rule == "rechtsform");
+        for (const auto& w : result.warnings) {
+            REQUIRE(w.rule != "gmbh_kapital");
+            REQUIRE(w.rule != "ug_kapital");
+        }
+    }
+
+    SECTION("GmbH — kein Rechtsform-Fehler") {
+        auto stamm = createValidStammdaten();
+        stamm.rechtsform = "gmbh";
+        auto result = v.validate(stamm, bilanz, guv);
+        bool hasError = false;
+        for (const auto& e : result.errors) {
+            if (e.rule == "rechtsform") hasError = true;
+        }
+        REQUIRE_FALSE(hasError);
+    }
+
+    SECTION("UG — kein Rechtsform-Fehler") {
+        auto stamm = createValidStammdaten();
+        stamm.rechtsform = "ug";
+        auto result = v.validate(stamm, bilanz, guv);
+        bool hasError = false;
+        for (const auto& e : result.errors) {
+            if (e.rule == "rechtsform") hasError = true;
+        }
+        REQUIRE_FALSE(hasError);
+    }
+}
+
+// ── Rule 3d: UG gesetzliche Rücklage ─────────────────────────────────────────
+
+TEST_CASE("Validator: UG gesetzliche Rücklage (§ 5a Abs. 3 GmbHG)") {
+    Validator v;
+    auto stamm = createValidStammdaten();
+    stamm.rechtsform = "ug";
+    stamm.ergebnisverwendung = "ausschuettung";
+
+    auto bilanz = createBalancedBilanz();
+    bilanz.gezeichnetesKapital = 1.0;
+    bilanz.jahresueberschuss = 10000.0;
+    auto guv = createMatchingGuV(10000.0);
+
+    SECTION("Ausschüttung über 75 % des Jahresüberschusses — WARNING") {
+        stamm.ausschuettungsbetrag = 9000.0;
+        auto result = v.validate(stamm, bilanz, guv);
+        bool hasWarning = false;
+        for (const auto& w : result.warnings) {
+            if (w.rule == "ug_ruecklage") hasWarning = true;
+        }
+        REQUIRE(hasWarning);
+        // Warning only — Rücklagenbildung is not machine-verifiable from the Bilanz
+        REQUIRE(result.isValid);
+    }
+
+    SECTION("Ausschüttung innerhalb 75 % — keine Warnung") {
+        stamm.ausschuettungsbetrag = 7000.0;
+        auto result = v.validate(stamm, bilanz, guv);
+        bool hasWarning = false;
+        for (const auto& w : result.warnings) {
+            if (w.rule == "ug_ruecklage") hasWarning = true;
+        }
+        REQUIRE_FALSE(hasWarning);
+        REQUIRE(result.isValid);
     }
 }
 

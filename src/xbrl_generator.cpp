@@ -225,10 +225,19 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
     addStringFact(root, "de-gcd:genInfo.company.id.location.country", "Deutschland", "current");
     addStringFact(root, "de-gcd:genInfo.company.id.location.country.isoCode", "DE", "current");
 
-    // Legal status — tuple element with substitution group child
+    // Legal status — tuple element with substitution group child.
+    // GmbH and UG (haftungsbeschränkt) are both legal-form type "KST"
+    // (Technischer Leitfaden zur HGB-Taxonomie, Kap. B.4.1 "Rechtsformen"),
+    // so only this enumeration child differs: every other KSt-specific
+    // emission in this file (KKE nil, statementType.tax nil, the
+    // rechtsformfremd nil-handling, sizeClass KK, incomeClassification)
+    // is identical for a UG.
     {
         auto legalStatus = root.append_child("de-gcd:genInfo.company.id.legalStatus");
-        auto child = legalStatus.append_child("de-gcd:genInfo.company.id.legalStatus.legalStatus.GMBH");
+        const char* legalStatusChild = (stamm.rechtsform == "ug")
+            ? "de-gcd:genInfo.company.id.legalStatus.legalStatus.UG"
+            : "de-gcd:genInfo.company.id.legalStatus.legalStatus.GMBH";
+        auto child = legalStatus.append_child(legalStatusChild);
         child.append_attribute("contextRef") = "current";
     }
 
@@ -263,7 +272,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         auto st13 = idNo.append_child("de-gcd:genInfo.company.id.idNo.type.companyId.ST13");
         st13.append_attribute("contextRef") = "current";
         st13.text().set(stamm.steuernummerBund.c_str());
-        // STID (Steuer-ID) — nil for GmbH (only for natural persons)
+        // STID (Steuer-ID) — nil for Kapitalgesellschaften (only for natural persons)
         auto stid = idNo.append_child("de-gcd:genInfo.company.id.idNo.type.companyId.STID");
         stid.append_attribute("contextRef") = "current";
         stid.append_attribute("xsi:nil") = "true";
@@ -359,7 +368,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         er.append_attribute("xsi:nil") = "true";
     }
 
-    // Size class — KK (Kleinstkapitalgesellschaft) for small GmbH (§267a HGB)
+    // Size class — KK (Kleinstkapitalgesellschaft) for small Kapitalgesellschaften (§267a HGB)
     {
         auto sc = root.append_child("de-gcd:genInfo.company.id.sizeClass");
         auto child = sc.append_child("de-gcd:genInfo.company.id.sizeClass.sizeClass.KK");
@@ -442,7 +451,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
     addReportElement("STU");      // Strukturierte Überleitungsrechnung
     addReportElement("BVV");      // Beteiligungsübersicht — required when GuV is declared
     if (kEmitAnlagenspiegel) addReportElement("BAL"); else addNilReportElement("BAL");
-    addNilReportElement("KKE");   // Kapitalkontenentwicklung — not applicable (GmbH)
+    addNilReportElement("KKE");   // Kapitalkontenentwicklung — not applicable (KSt)
     addNilReportElement("SGE");   // Sonderbilanzen — not applicable
     addNilReportElement("SGEP");  // Ergänzungsbilanzen — not applicable
 
@@ -492,7 +501,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
         child.append_attribute("contextRef") = "current";
     }
 
-    // Audit — no audit required for small GmbH
+    // Audit — no audit required for small Kapitalgesellschaften
     {
         auto noAudit = root.append_child("de-gcd:genInfo.report.audit.noAudit");
         auto child = noAudit.append_child("de-gcd:genInfo.report.audit.noAudit.noAuditRequi");
@@ -581,7 +590,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
             get("bs.ass.fixAss.fin.loansToAffil.partnerships"));
 
         // Receivables other: sum of all sub-classifications
-        // Note: unpaidCapitalLimited/UnlimitedLiablePartner are rechtsformfremd for KSt (GmbH)
+        // Note: unpaidCapitalLimited/UnlimitedLiablePartner are rechtsformfremd for KSt
         set("bs.ass.currAss.receiv.other",
             get("bs.ass.currAss.receiv.other.assetManaging") +
             get("bs.ass.currAss.receiv.other.commPart") +
@@ -1212,7 +1221,7 @@ std::string XBRLGenerator::generate(const Stammdaten& stamm,
                 spdlog::debug("Mussfeld nil (not allowed with BalProfit): {}", mussfeld);
                 continue;
             }
-            // Rechtsformfremd positions for KSt (GmbH): must be reported but as nil, not 0.00
+            // Rechtsformfremd positions for KSt: must be reported but as nil, not 0.00
             // Covers all Personengesellschaft-specific positions
             bool isRechtsformfremd =
                 (mussfeld.find("partner") != std::string::npos) ||  // partner, partners

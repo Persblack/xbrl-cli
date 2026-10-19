@@ -84,6 +84,17 @@ Zeile | Feld                      | Beispiel              | Pflicht
  25   | DatenLieferant           |                       | ❌
 ```
 
+**Rechtsform (Zeile 6):** Es sind genau zwei Werte zulässig — `GmbH` oder `UG (haftungsbeschränkt)`.
+Jede andere Angabe wird als Fehler abgewiesen. Die Rechtsform steuert das Mindestkapital in der
+Validierung (GmbH ≥ 25.000 EUR nach § 5 Abs. 1 GmbHG, UG ≥ 1 EUR nach § 5a Abs. 1 GmbHG) und das
+legalStatus-Element der erzeugten XBRL-Datei.
+
+Im mitgelieferten Template ist B6 als Auswahlliste (Dropdown) hinterlegt.
+**Hinweis zur Neuerzeugung:** `create_test_data` baut das Template mit xlnt neu auf,
+und xlnt kann keine Datenüberprüfungen schreiben — das Dropdown geht dabei verloren.
+Nach jedem Lauf muss daher `python scripts/add_rechtsform_dropdown.py` folgen
+(idempotent, kann beliebig oft ausgeführt werden).
+
 ---
 
 ## Nutzung der Template
