@@ -75,10 +75,9 @@ Nutze `templates/ebilanz-template.xlsx`:
 | **Stammdaten** | Firmendaten, Steuernummer, BuFa-Nr, Wirtschaftsjahr |
 | **Bilanz** | Aktiva & Passiva nach HGB §266 (aktuelles + Vorjahr) |
 | **GuV** | Gewinn- und Verlustrechnung (Gesamtkostenverfahren) |
-| **Validierung** | Automatische Checks (eingebaute Formeln) |
-| **Info** | Hilfe & Anleitung |
 
 **Hinweis:**
+- **Rechtsform** (Zeile 6): **Pflicht**, Dropdown mit `GmbH` oder `UG (haftungsbeschränkt)`. Steuert das Mindestkapital in der Validierung und die Rechtsform im XBRL (`legalStatus.GMBH` bzw. `legalStatus.UG`). Ältere, von Hand angelegte Vorlagen ohne Eintrag in B6 werden jetzt mit einem Fehler abgewiesen — Zelle nachtragen.
 - **HerstellerID** (Zeile 24): **Pflicht** für die Übermittlung. Jeder Hersteller benötigt eine eigene, bei ELSTER registrierte HerstellerID — siehe Abschnitt „HerstellerID & DatenLieferant". Alternativ via `--hersteller-id`.
 - **DatenLieferant** (Zeile 25): Optional, falls abweichend vom Firmennamen
 
@@ -298,6 +297,8 @@ Das Tool prüft automatisch:
 - `ug_kapital` — ERROR, wenn UG und gezeichnetes Kapital < 1 € (§ 5a Abs. 1 GmbHG); WARNING ab 25.000 €, weil dann die Sonderregeln des § 5a GmbHG entfallen.
 - `ug_ruecklage` — WARNING, wenn bei einer UG die geplante Ausschüttung mehr als 75 % des Jahresüberschusses beträgt (gesetzliche Rücklage nach § 5a Abs. 3 GmbHG). Reiner Hinweis, keine Blockade.
 
+Die UG-Unterstützung ist durch die Testsuite und lokal erzeugte XBRL-Dateien abgedeckt; eine ERiC-Testübermittlung für eine UG steht noch aus.
+
 ---
 
 ## Projektstruktur
@@ -312,6 +313,8 @@ ebilanz/
 │   └── bufa-verzeichnis.json   # Bundesland → BuFa Mapping
 ├── templates/
 │   └── ebilanz-template.xlsx   # Excel-Vorlage für Nutzer
+├── scripts/
+│   └── add_rechtsform_dropdown.py  # Rechtsform-Dropdown in die Vorlage schreiben
 ├── external/
 │   └── eric-sdk/               # ERiC SDK (optional, nicht im Repo)
 ├── src/
@@ -339,13 +342,15 @@ cd build
 ctest --output-on-failure
 ```
 
-**Test-Abdeckung:**
-- ✅ Excel-Parsing (4 Test-Cases)
-- ✅ Validierung (12 Regeln)
+**Test-Abdeckung:** 55 Test-Cases, 272 Assertions
+- ✅ Excel-Parsing inkl. Rechtsform aus B6
+- ✅ Validierung (12 Regeln, inkl. GmbH-/UG-Mindestkapital und § 5a Abs. 3 GmbHG)
 - ✅ Steuernummer-Konvertierung (3 Bundesländer)
-- ✅ XBRL-Generierung (5 Test-Cases)
-- ✅ ElsterBasis-Wrapper (8 Test-Cases, 42 Assertions)
-- ✅ ERiC-Integration (2 Test-Cases)
+- ✅ XBRL-Generierung inkl. `legalStatus` je Rechtsform
+- ✅ ElsterBasis-Wrapper
+- ✅ ERiC-Integration
+
+Wird `templates/ebilanz-template.xlsx` über `create_test_data` neu erzeugt, fehlt danach das Rechtsform-Dropdown (xlnt schreibt keine Data Validations). Danach einmal `python scripts/add_rechtsform_dropdown.py` ausführen.
 
 ---
 
@@ -360,7 +365,6 @@ ctest --output-on-failure
 
 ### "Bilanz nicht ausgeglichen"
 → Prüfe Excel: Summe Aktiva muss exakt Summe Passiva entsprechen
-→ Nutze Sheet "Validierung" für automatische Checks
 
 ### "Gezeichnetes Kapital ... unter 25.000 EUR"
 → Eine GmbH benötigt mindestens 25.000 € Stammkapital (§ 5 Abs. 1 GmbHG)
